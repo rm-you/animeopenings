@@ -1,11 +1,5 @@
 <?php
-	include "names.php";
-	$videos = $names;
-
-	if (file_exists("eggs.php")) {
-		include "eggs.php";
-		$videos += $eggs;
-	}
+	include_once "videos.php";
 
 	$filename = "";
 
@@ -48,8 +42,8 @@
 
 		$filename = $videos[$series][$video]["file"];
 
-		$title = "Anime Openings";
-		$description = "Anime openings from hundreds of series in high-quality";
+		$title = "Anime Music Videos";
+		$description = "Anime Music Videos from (eventually) hundreds of editors in high-quality";
 	}
 
 	// Error handling, QuadStyle™ (feat. Yay295)
@@ -101,11 +95,11 @@
 
 		<!-- Open Graph Tags -->
 		<meta property="og:type" content="article" /> <!-- article or video.other -->
-		<meta property="og:url" content="https://openings.moe/?video=<?php echo $s_filename; ?>" />
-		<meta property="og:site_name" content="openings.moe" />
+		<meta property="og:url" content="https://amvs.moe/?video=<?php echo $s_filename; ?>" />
+		<meta property="og:site_name" content="amvs.moe" />
 		<meta property="og:title" content="<?php echo $title; ?>" />
 		<meta property="og:description" content="<?php echo $description; ?>" />
-		<meta property="al:web:url" content="https://openings.moe/?video=<?php echo $s_filename; ?>" />
+		<meta property="al:web:url" content="https://amvs.moe/?video=<?php echo $s_filename; ?>" />
 
 		<!-- CSS and JS external resources block -->
 		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css">
@@ -156,7 +150,7 @@
 			<span id="closemenubutton" onclick="hideMenu()" class="quadbutton fa fa-times"></span>
 
 			<p id="title"><?php echo $video; ?> </p>
-			<p id="source"><?php echo "From " . $series; ?></p>
+			<p id="source"><?php echo "Editor: " . $series; ?></p>
 			<span id="song"><?php // If we have the data, echo it
 				if ($songKnown)
 					echo "Song: &quot;" . $songTitle . "&quot; by " . $songArtist;
@@ -176,7 +170,7 @@
 				<li class="link"><a href="/hub/faq.php#keybindings">Keyboard bindings</a></li>
 			</ul>
 
-			<p class="betanote">This site is in beta. Request openings/endings and report errors by mentioning @QuadPiece on Twitter.</p>
+			<p class="betanote">This site is in beta. Request AMVs and report errors by mentioning @rm_you on Twitter.</p>
 		</div>
 
 		<div class="displayTopRight"></div>
@@ -184,7 +178,6 @@
 		<div id="tooltip" class="is-hidden"></div>
 
 		<div class="controlsleft">
-			<span id="openingsonly" class="quadbutton fa fa-circle" onclick="toggleOpeningsOnly()"></span>
 			<span id="getnewvideo" class="quadbutton fa fa-refresh" onclick="retrieveNewVideo()"></span>
 			<span id="autonext" class="quadbutton fa fa-toggle-off" onclick="toggleAutonext()"></span>
 		</div>

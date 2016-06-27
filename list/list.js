@@ -109,9 +109,34 @@ function search() {
 			++j;
 		}
 
+		let amvs = series.firstElementChild.children;
+		for (let i = 0; i < amvs.length; ++i) {
+			let h = 0;
+			while (h < toFindLength) {
+				// If the RegExp doesn't match
+				if (!toFind[h].test(amvs[i].title)) {
+					amvs[i].setAttribute("hidden", "");
+					break;
+				}
+
+				++h;
+			}
+
+			// If all RegExp's passed
+			if (h == toFindLength) {
+				amvs[i].removeAttribute("hidden");
+				series.removeAttribute("hidden");
+				anyResults = true;
+			}
+
+		}
+
 		// If all RegExp's passed
 		if (j == toFindLength) {
 			series.removeAttribute("hidden");
+			for (let i = 0; i < amvs.length; i++) {
+				amvs[i].removeAttribute("hidden");
+			}
 			anyResults = true;
 		}
 	}
@@ -122,7 +147,7 @@ function search() {
 
 function playlistAdd() {
 	var video = {title: this.nextElementSibling.text,
-				 source: this.parentElement.parentElement.childNodes[0].nodeValue,
+				 source: this.parentElement.parentElement.parentElement.childNodes[0].nodeValue,
 				 file: this.nextElementSibling.href.substring(this.nextElementSibling.href.indexOf("=")+1) + this.getAttribute("fext")};
 	if (this.hasAttribute("songTitle")) video.song = { title: this.getAttribute("songTitle"), artist: this.getAttribute("songArtist") };
 	if (this.hasAttribute("subtitles")) video.subtitles = this.getAttribute("subtitles");
@@ -139,7 +164,7 @@ function playlistAdd() {
 		XNode.addEventListener("click", playlistRemove);
 		XNode.source = this;
 	var TNode = document.createElement("span");
-		TNode.innerHTML = '<span>' + video.title + " from " + video.source + "</span>";
+		TNode.innerHTML = '<span>' + video.title + " by " + video.source + "</span>";
 	var BNode = document.createElement("br");
 	playlistBot.parentNode.insertBefore(XNode, playlistBot);
 	playlistBot.parentNode.insertBefore(TNode, playlistBot);

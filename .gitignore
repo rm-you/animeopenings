@@ -7,11 +7,11 @@
 .Trashes
 ehthumbs.db
 Thumbs.db
+.ftpquota
 
 # This really doesn't need to be updated #
 ##########################################
-names.php
-eggs.php
+videos.php
 backend/includes/botnet.html
 *.webm
 subtitles/*.ass
@@ -19,3 +19,4 @@ assets/fonts/*
 CSS/fonts.css
 tocopy/*
 Yay295/*
+video/*

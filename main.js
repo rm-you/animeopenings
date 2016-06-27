@@ -23,7 +23,7 @@ var storageSupported = false;
 function filename() { return document.getElementsByTagName("source")[0].src.split("video/")[1].replace(/\.\w+$/, ""); }
 function fileext() { return document.getElementsByTagName("source")[0].src.split("video/")[1].replace(filename(), ""); }
 function title() { return document.getElementById("title").textContent.trim(); }
-function source() { return document.getElementById("source").textContent.trim().slice(5); }
+function source() { return document.getElementById("source").textContent.trim().slice(8); }
 function subtitlePath() { return "subtitles/" + filename() + ".ass"; }
 
 window.onload = function() {
@@ -49,11 +49,6 @@ window.onload = function() {
   try { if ("localStorage" in window && window["localStorage"] !== null) storageSupported = true; } catch(e) { }
   if (storageSupported) {
     if (window.localStorage["autonext"] == "true") toggleAutonext();
-    if (window.localStorage["openingsonly"] == "op") toggleOpeningsOnly();
-    else if (window.localStorage["openingsonly"] == "ed") {
-      toggleOpeningsOnly();
-      toggleOpeningsOnly();
-    }
   }
 
   const video = document.getElementById("bgvid");
@@ -171,7 +166,7 @@ function getVideolist() {
   tooltip("Loading...", "bottom: 50%; left: 50%; bottom: calc(50% - 16.5px); left: calc(50% - 46.5px); null");
 
   $.ajaxSetup({async: false});
-  $.getJSON("api/list.php?eggs&shuffle&first=" + filename() + fileext(), function(json) {
+  $.getJSON("api/list.php?shuffle&first=" + filename() + fileext(), function(json) {
     video_obj = json;
     vNum = 1;
   });
@@ -190,19 +185,6 @@ function retrieveNewVideo() {
 
   // When the end of the list is reached, go back to the beginning. Only do this once per function call.
   for (var start = vNum, end = video_obj.length, counter = 2; counter > 0; --counter) {
-    // get a new video until it isn't an ending
-    if (OPorED == "op")
-      while (vNum < end && video_obj[vNum].file.slice(0,6) == "Ending")
-        ++vNum;
-    // get a new video until it isn't an opening
-    else if (OPorED == "ed")
-      while (vNum < end && video_obj[vNum].file.slice(0,7) == "Opening")
-        ++vNum;
-    // get a new video until it is an Easter Egg
-    else if (OPorED == "egg")
-      while (vNum < end && video_obj[vNum].source != "???")
-        ++vNum;
-
     if (vNum >= end) {
       vNum = 0;
       end = start
@@ -211,8 +193,7 @@ function retrieveNewVideo() {
 
   setVideoElements();
 
-  if (document.title == "Secret~") history.pushState({video: "Egg", list: []}, document.title, location.origin + location.pathname);
-  else history.pushState({video: vNum, list: video_obj}, document.title, location.origin + location.pathname);
+  history.pushState({video: vNum, list: video_obj}, document.title, location.origin + location.pathname);
 
   resetSubtitles();
   document.getElementById("bgvid").play();
@@ -246,25 +227,17 @@ function setVideoElements() {
   document.getElementsByTagName("source")[0].type = "video/" + videoMIMEsubtype(video.file);
   document.getElementById("bgvid").load();
   document.getElementById("subtitle-attribution").innerHTML = (video.subtitles ? "[" + video.subtitles + "]" : "");
-  if (video.source == "???") {
-    document.title = "Secret~";
-    document.getElementById("title").innerHTML = "Secret~";
-    document.getElementById("source").innerHTML = "";
-    document.getElementById("videolink").parentNode.setAttribute("hidden","");
-    document.getElementById("videodownload").parentNode.setAttribute("hidden","");
-  } else {
-    document.title = video.title + " from " + video.source;
-    document.getElementById("title").innerHTML = video.title;
-    document.getElementById("source").innerHTML = "From " + video.source;
-    document.getElementById("videolink").parentNode.removeAttribute("hidden");
-    document.getElementById("videodownload").parentNode.removeAttribute("hidden");
-    document.getElementById("videolink").href = "/?video=" + video.file.replace(/\.\w+$/, "");
-    document.getElementById("videodownload").href = "video/" + video.file;
-  }
+  document.title = video.title + " from " + video.source;
+  document.getElementById("title").innerHTML = video.title;
+  document.getElementById("source").innerHTML = "Editor: " + video.source;
+  document.getElementById("videolink").parentNode.removeAttribute("hidden");
+  document.getElementById("videodownload").parentNode.removeAttribute("hidden");
+  document.getElementById("videolink").href = "/?video=" + video.file.replace(/\.\w+$/, "");
+  document.getElementById("videodownload").href = "video/" + video.file;
+
 
   var song = "";
-  if (video.song) song = "Song: &quot;" + video.song.title + "&quot; by " + video.song.artist;
-  else if ((video.source == "???") || (Math.random() <= 0.01)) song = "Song: &quot;Sandstorm&quot; by Darude";
+  song = "Song: &quot;" + video.song.title + "&quot; by " + video.song.artist;
   document.getElementById("song").innerHTML = song;
 
   // Set button to show play icon.
@@ -378,31 +351,6 @@ function onend() {
   else document.getElementById("bgvid").play(); // loop
 }
 
-// OP/ED/All toggle
-function toggleOpeningsOnly() {
-  const element = document.getElementById("openingsonly");
-  if (OPorED == "all") { // change from all to openings
-    OPorED = "op";
-    element.classList.remove("fa-circle");
-    element.classList.add("fa-adjust");
-    element.classList.add("fa-flip-horizontal");
-  } else if (OPorED == "op") { // change from openings to endings
-    OPorED = "ed";
-    element.classList.remove("fa-flip-horizontal");
-  } else { // change from egg or endings to all
-    OPorED = "all";
-    element.classList.remove("fa-circle-o");
-    element.classList.remove("fa-adjust");
-    element.classList.add("fa-circle");
-  }
-
-  if (storageSupported) window.localStorage["openingsonly"] = OPorED;
-
-  // Toggle Tooltip
-  tooltip();
-  tooltip("openingsonly");
-}
-
 // Overused tooltip code
 function tooltip(text, css) {
   var eventType;
@@ -415,12 +363,6 @@ function tooltip(text, css) {
     case "menubutton":
       text = "Menu (M)";
       css = "top: 65px; bottom: auto; left";
-      break;
-    case "openingsonly":
-      if (OPorED == "all") text = "Click to only view openings";
-      else if (OPorED == "op") text = "Click to only view endings";
-      else text = "Click to view openings and endings";
-      css = "left";
       break;
     case "getnewvideo":
       text = "Click to get a new video (N)";
@@ -562,7 +504,7 @@ $(window).konami({
     isKonaming = !isKonaming;
 
     $("#menubutton").toggleClass("fa-spin");
-    $("#openingsonly").toggleClass("fa-spin");
+    //$("#openingsonly").toggleClass("fa-spin");
     $("#wrapper").toggleClass("fa-spin");
     $("#getnewvideo").toggleClass("fa-spin");
     $("#autonext").toggleClass("fa-spin");
@@ -573,15 +515,6 @@ $(window).konami({
     $("#fullscreen-button").toggleClass("fa-spin");
 
     keylog = []
-
-    if (isKonaming) {
-      const element = document.getElementById("openingsonly");
-      element.classList.remove("fa-circle");
-      element.classList.remove("fa-adjust");
-      element.classList.remove("fa-flip-horizontal");
-      element.classList.add("fa-circle-o");
-      OPorED = "egg";
-    }
   }
 });
 

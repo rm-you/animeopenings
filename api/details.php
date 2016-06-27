@@ -32,11 +32,11 @@ if (!file_exists($videolocation)) {
 }
 
 // Include the metadata list
-include_once "../names.php";
+include_once "../videos.php";
 
 // Check if the file is in the array
 $found = false;
-foreach ($names as $S => $video_array) {
+foreach ($videos as $S => $video_array) {
 	foreach ($video_array as $T => $data) {
 		if ($data["file"] == $video) {
 			$found = true;

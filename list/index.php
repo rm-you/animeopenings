@@ -19,25 +19,25 @@
 		<h1>Video list</h1>
 
 		<?php
-		// Load names.php and count videos/series
+		// Load videos.php and count videos/series
 
-		include_once "../names.php";
+		include_once "../videos.php";
 
-		$videosnumber = 0;
-		foreach ($names as $videos) $videosnumber += count($videos);
-		$seriesnumber = count($names);
+		$editorsnumber = 0;
+		foreach ($videos as $editors) $editorsnumber += count($editors);
+		$seriesnumber = count($videos);
 
-		echo '<p>We currently serve <span class="count">' . $videosnumber . '</span> videos from <span class="count">' . $seriesnumber . '</span> series.</p>';
+		echo '<p>We currently serve <span class="count">' . $editorsnumber . '</span> videos from <span class="count">' . $seriesnumber . '</span> editors.</p>';
 		?>
 
 		<a id="searchURL" href="">Search:</a>
-		<input id="searchbox" type="text" placeholder="Series name..." autofocus>
+		<input id="searchbox" type="text" placeholder="AMV/Editor name..." autofocus>
 		<br />
 		<p id="regex"><span>(press tab while typing to enable RegEx in search)</span></p>
 		<br />
 
 		<div id="NoResultsMessage" hidden>
-			<p>We could not find any shows matching your search query.</p>
+			<p>We could not find any AMVs matching your search query.</p>
 			<ol>
 				<li>Is it spelled correctly?</li>
 				<li>Have you tried using the Japanese title?</li>
@@ -45,24 +45,24 @@
 			</ol>
 			<p>If you still can't find the video you are looking for, we probably don't have it yet. In this case, you have two options:</p>
 			<ol>
-				<li>Mentioning Quad on <a href="https://twitter.com/QuadPiece/">Twitter</a>, or</li>
+				<li>Mentioning rm_you on <a href="https://twitter.com/rm_you/">Twitter</a>, or</li>
 				<li><a href="../hub/encodes.php">submitting an encode yourself</a>.</li>
 			</ol>
 		</div>
 
 		<?php
 		// Output list of videos
-		foreach ($names as $series => $video_array) {
+		foreach ($videos as $series => $video_array) {
 			echo '<div class="series">' . $series . "<div>" . PHP_EOL;
 
 			foreach ($video_array as $title => $data) {
 				$noext = preg_replace("/\.\w+$/", "", $data["file"]);
-				echo '	<i class="fa fa-plus" fext="' . str_replace($noext, "", $data["file"]) . '"';
+				echo '	<div title="' . $title . '"><i class="fa fa-plus" fext="' . str_replace($noext, "", $data["file"]) . '"';
 					if (array_key_exists("song", $data)) echo ' songTitle="' . $data["song"]["title"] . '" songArtist="' . $data["song"]["artist"] . '"';
 					if (array_key_exists("subtitles", $data)) echo ' subtitles="' . $data["subtitles"] . '"';
 				echo '></i>' . PHP_EOL;
 				echo '	<a href="../?video=' . $noext . '">' . $title . "</a>" . PHP_EOL;
-				echo "	<br />" . PHP_EOL;
+				echo "	<br /></div>" . PHP_EOL;
 			}
 
 			echo "</div></div>" . PHP_EOL;

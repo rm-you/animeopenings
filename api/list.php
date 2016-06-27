@@ -7,13 +7,7 @@ function keySearch($array1, $field, $value) {
 	return false;
 }
 
-include "../names.php";
-$videos = $names;
-
-if (isset($_GET["eggs"]) && file_exists("eggs.php")) {
-	include "../eggs.php";
-	$videos += $eggs;
-}
+include_once "../videos.php";
 
 $output = array();
 
