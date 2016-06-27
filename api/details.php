@@ -32,7 +32,7 @@ if (!file_exists($videolocation)) {
 }
 
 // Include the metadata list
-include_once "../videos.php";
+require("../videos.php");
 
 // Check if the file is in the array
 $found = false;

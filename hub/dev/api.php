@@ -80,7 +80,7 @@
 				<pre>}</pre>
 			</code>
 
-			<?php include_once "../../backend/includes/botnet.html"; ?>
+			<?php @include_once("../../backend/includes/botnet.html"); ?>
 		</main>
 	</body>
 </html>

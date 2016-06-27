@@ -21,7 +21,7 @@
 		<?php
 		// Load videos.php and count videos/series
 
-		include_once "../videos.php";
+		require("../videos.php");
 
 		$editorsnumber = 0;
 		foreach ($videos as $editors) $editorsnumber += count($editors);
@@ -68,7 +68,7 @@
 			echo "</div></div>" . PHP_EOL;
 		}
 
-		include_once "../backend/includes/botnet.html";
+		@include_once("../backend/includes/botnet.html");
 		?>
 	</body>
 </html>

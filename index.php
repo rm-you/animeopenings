@@ -1,5 +1,5 @@
 <?php
-	include_once "videos.php";
+	require("videos.php");
 
 	$filename = "";
 
@@ -190,6 +190,6 @@
 			<span id="fullscreen-button" class="quadbutton fa fa-expand" onclick="toggleFullscreen()"></span>
 		</div>
 
-		<?php include "backend/includes/botnet.html"; ?>
+		<?php @include_once("backend/includes/botnet.html"); ?>
 	</body>
 </html>

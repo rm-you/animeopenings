@@ -7,7 +7,7 @@ function keySearch($array1, $field, $value) {
 	return false;
 }
 
-include_once "../videos.php";
+require("../videos.php");
 
 $output = array();
 

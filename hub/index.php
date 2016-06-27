@@ -10,7 +10,7 @@
 		<header>
 			<div>
 				<h1>About us</h1>
-				<?php include "navbar"; ?>
+				<?php require("navbar"); ?>
 			</div>
 		</header>
 		<main>
@@ -69,7 +69,7 @@
 		</main>
 
 		<?php
-		include_once "../backend/includes/botnet.html";
+		@include_once("../backend/includes/botnet.html");
 		?>
 	</body>
 </html>
