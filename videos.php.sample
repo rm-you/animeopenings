@@ -15,7 +15,7 @@
 		"Ending 1b" => [
 			"file" => "Ending1b-NekomonogatariKuro.webm"]],
 */
-$names = [
+$videos = [
 	".hack//Sign" => [
 		"Opening 1" => [
 			"file" => "Opening1-DotHackSign.webm",
