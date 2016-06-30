@@ -34,7 +34,7 @@
 			}
 		}
 
-		$title = ($series == "???" ? "Secret~" : ($video . " from " . $series));
+		$title = $video . " by " . $series;
 		$description = "";
 	} else { // Otherwise pick a random video
 		$series = array_rand($videos);

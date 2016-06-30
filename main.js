@@ -10,8 +10,6 @@
 */
 
 // Global Variables
-var isKonaming = false;
-const konamicode = [38,38,40,40,37,39,37,39,66,65];
 var keylog = [];
 var vNum = 0, video_obj = [];
 var autonext = false;
@@ -407,7 +405,6 @@ function tooltip(text, css) {
 
 // Keyboard functions
 $(document).keydown(function(e) {
-    const kc = konamicheck(e.which);
     switch(e.which) {
       case 32: // Space
         playPause();
@@ -419,10 +416,10 @@ $(document).keydown(function(e) {
         changeVolume(-0.05);
         break;
       case 37: // Left Arrow
-        if(!kc) skip(-10);
+        skip(-10);
         break;
       case 39: // Right Arrow
-        if(!kc) skip(10);
+        skip(10);
         break;
       case 70: // F
       case 122: // F11
@@ -441,80 +438,6 @@ $(document).keydown(function(e) {
         return;
     }
     e.preventDefault();
-});
-
-function konamicheck(k) {
-  keylog.push(k);
-  if (konamicode.slice(0, keylog.length).toString() !== keylog.toString()) {
-    keylog = [];
-    return false;
-  } else return true;
-}
-
-/* Konami Code For jQuery Plugin
-   1.3.0, 7 March 2014
-
-   Using the Konami code, easily configure an Easter Egg for your page or any element on the page.
-
-   Copyright 2011 - 2014 Tom McFarlin, http://tommcfarlin.com
-   Released under the MIT License.
-*/
-(function($) {
-  "use strict";
-
-  $.fn.konami = function(options) {
-    var opts = $.extend({}, $.fn.konami.defaults, options);
-    var controllerCode = [];
-
-    // note that we use the passed-in options, not the resolved options
-    opts.eventProperties = $.extend({}, options,  opts.eventProperties);
-
-    this.keyup(function(evt) {
-      const code = evt.keyCode || evt.which;
-
-      if (opts.code.length > controllerCode.push(code))
-        return;
-
-      if (opts.code.length < controllerCode.length)
-        controllerCode.shift();
-
-      if (opts.code.toString() !== controllerCode.toString())
-        return;
-
-      opts.cheat(evt, opts);
-
-    });
-
-    return this;
-  };
-
-  $.fn.konami.defaults = {
-    code : [38,38,40,40,37,39,37,39,66,65],
-    eventName : "konami",
-    eventProperties : null,
-    cheat: function(evt, opts) {
-      $(evt.target).trigger(opts.eventName, [ opts.eventProperties ]);
-    }
-  };
-}( jQuery ));
-
-// The Konami Code Easter Egg
-$(window).konami({
-  cheat: function() {
-    isKonaming = !isKonaming;
-
-    $("#menubutton").toggleClass("fa-spin");
-    $("#wrapper").toggleClass("fa-spin");
-    $("#getnewvideo").toggleClass("fa-spin");
-    $("#autonext").toggleClass("fa-spin");
-    $("#subtitles-button").toggleClass("fa-spin");
-    $("#skip-left").toggleClass("fa-spin");
-    $("#skip-right").toggleClass("fa-spin");
-    $("#pause-button").toggleClass("fa-spin");
-    $("#fullscreen-button").toggleClass("fa-spin");
-
-    keylog = []
-  }
 });
 
 // checks if an event is supported
