@@ -12,8 +12,7 @@
 // Global Variables
 var keylog = [];
 var vNum = 0, video_obj = [];
-var autonext = false;
-var OPorED = "all"; // egg, op, ed, all
+var autonext = true;
 var xDown = null, yDown = null; // position of mobile swipe start location
 var mouseIdle, lastMousePos = {"x":0,"y":0};
 var storageSupported = false;
@@ -23,6 +22,7 @@ function fileext() { return document.getElementsByTagName("source")[0].src.split
 function title() { return document.getElementById("title").textContent.trim(); }
 function source() { return document.getElementById("source").textContent.trim().slice(8); }
 function subtitlePath() { return "subtitles/" + filename() + ".ass"; }
+function isTouchDevice() { return (('ontouchstart' in window) || (navigator.MaxTouchPoints > 0) || (navigator.msMaxTouchPoints > 0)); }
 
 window.onload = function() {
   // Fix menu button. It is set in HTML to be a link to the FAQ page for anyone who has disabled JavaScript.
@@ -30,18 +30,15 @@ window.onload = function() {
 
   // Set/Get history state
   if (history.state == null) {
-    if (document.title == "Secret~") history.replaceState({video: "Egg", list: []}, document.title, location.origin + location.pathname);
-    else {
-      var state = {file: filename() + fileext(), source: source(), title: title()};
-      document.title = state.title + " from " + state.source;
-      if (document.getElementById("song").innerHTML) { // We know the song info
-        var info = document.getElementById("song").innerHTML.replace("Song: \"","").split("\" by ");
-        state.song = {title: info[0], artist: info[1]};
-      }
-      if ($("#subtitles-button").is(":visible")) // Subtitles are available
-        state.subtitles = getSubtitleAttribution().slice(1,-1);
-      history.replaceState({video: [state], list: []}, document.title, location.origin + location.pathname + (location.search ? "?video=" + filename() : ""));
+    var state = {file: filename() + fileext(), source: source(), title: title()};
+    document.title = state.title + " from " + state.source;
+    if (document.getElementById("song").innerHTML) { // We know the song info
+      var info = document.getElementById("song").innerHTML.replace("Song: \"","").split("\" by ");
+      state.song = {title: info[0], artist: info[1]};
     }
+    if ($("#subtitles-button").is(":visible")) // Subtitles are available
+      state.subtitles = getSubtitleAttribution().slice(1,-1);
+    history.replaceState({video: [state], list: []}, document.title, location.origin + location.pathname + (location.search ? "?video=" + filename() : ""));
   } else popHist();
 
   try { if ("localStorage" in window && window["localStorage"] !== null) storageSupported = true; } catch(e) { }
@@ -107,11 +104,8 @@ function popHist() {
   if (history.state == "list") history.go();
 
   if (history.state.list == "") {
-    if (history.state.video == "Egg") getVideolist();
-    else {
-      vNum = 0;
-      video_obj = history.state.video;
-    }
+    vNum = 0;
+    video_obj = history.state.video;
   } else {
     vNum = history.state.video;
     video_obj = history.state.list;
@@ -351,6 +345,7 @@ function onend() {
 
 // Overused tooltip code
 function tooltip(text, css) {
+  if (isTouchDevice()) return;
   var eventType;
   if (text && text.target) {
     eventType = text.type;
