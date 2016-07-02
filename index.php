@@ -151,20 +151,14 @@
 
 			<p id="title"><?php echo $video; ?> </p>
 			<p id="source"><?php echo "Editor: " . $series; ?></p>
-			<span id="song"><?php // If we have the data, echo it
-				if ($songKnown)
-					echo "Song: &quot;" . $songTitle . "&quot; by " . $songArtist;
-				else { // Otherwise, let's just pretend it never existed... or troll the user.
-					if ($series == "???" || mt_rand(0,100) == 1)
-						echo "Song: &quot;Sandstorm&quot; by Darude";
-					else
-						echo "";
-				} ?></span>
+			<span id="song">
+				<?php if ($songKnown) echo "Song: &quot;" . $songTitle . "&quot; by " . $songArtist; ?>
+			</span>
 			<p id="subs"<?php if (!$subtitlesAvailable) echo ' style="display:none"'; ?>>Subtitles by <span id="subtitle-attribution"><?php echo $subtitleAttribution; ?></span></p>
 
 			<ul id="linkarea">
-				<li class="link"<?php if ($series == "???") echo " hidden"; ?>><a href="/?video=<?php if ($series != "???") echo $s_filename; ?>" id="videolink">Link to this video</a></li>
-				<li class="link"<?php if ($series == "???") echo " hidden"; ?>><a href="video/<?php if ($series != "???") echo $filename; ?>" id="videodownload" download>Download this video</a></li>
+				<li class="link"><a href="/?video=<?php echo $s_filename; ?>" id="videolink">Link to this video</a></li>
+				<li class="link"><a href="video/<?php echo $filename; ?>" id="videodownload" download>Download this video</a></li>
 				<li class="link"><a href="/list/">Video list</a></li>
 				<li class="link"><a href="/hub/">Hub</a></li>
 				<li class="link"><a href="/hub/faq.php#keybindings">Keyboard bindings</a></li>
