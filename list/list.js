@@ -271,7 +271,7 @@ function showResults(videos) {
 				result += '<i class="fa fa-cc" title="[' + subtitles + '"] subtitles are available for this video"></i>\n';
 			}
 			if (song != undefined) {
-				result += '<i class="fa fa-music" title="\"' + song_title + '\" by ' + song_artist + '"></i>\n';
+				result += '<i class="fa fa-music" title="\'' + song_title + '\' by ' + song_artist + '"></i>\n';
 			}
 			result += '\n<br /></div>\n';
 		}
