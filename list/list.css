@@ -11,11 +11,14 @@ a:hover, .fa-plus:hover, .fa-remove:hover {
 	color: #E58B00;
 }
 
-body {
+main {
 	max-width: 640px;
 	margin-left: auto;
 	margin-right: auto;
 	padding: 45px;
+}
+
+body {
 	/* Force scroll to avoid making the width change when searching */
 	overflow-y: scroll;
 }
@@ -65,7 +68,7 @@ body {
 	color: #36CC00;
 }
 
-div div {
+#results div {
 	padding-left: 1.5em;
 	margin-top: 0.5em;
 	margin-bottom: 0.5em;
