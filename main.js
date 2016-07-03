@@ -7,7 +7,7 @@
    givanse ( http://stackoverflow.com/a/23230280 ) - Mobile Swipe Detection
    maj160 - Fullscreen Functions, Subtitle Renderer
    aty2 - Menu toggle keyboard button
-*/
+   */
 
 // Global Variables
 var keylog = [];
@@ -16,188 +16,247 @@ var autonext = true;
 var xDown = null, yDown = null; // position of mobile swipe start location
 var mouseIdle, lastMousePos = {"x":0,"y":0};
 var storageSupported = false;
+var initial = true;
 
-function filename() { return document.getElementsByTagName("source")[0].src.split("video/")[1].replace(/\.\w+$/, ""); }
-function fileext() { return document.getElementsByTagName("source")[0].src.split("video/")[1].replace(filename(), ""); }
+function filename() {
+	var type = document.getElementsByTagName("source")[0].type;
+	if (type.length > 0) {
+		var src = document.getElementsByTagName("source")[0].src;
+		return src.split("video/")[1].replace(/\.\w+$/, "");
+	}
+	if ($.urlParam("video") != undefined) {
+		return $.urlParam("video");
+	}
+	return "";
+}
+function fileext() {
+	var type = document.getElementsByTagName("source")[0].type;
+	if (type.length > 0) {
+		var src = document.getElementsByTagName("source")[0].src;
+		return src.split("video/")[1].replace(filename(), "");
+	}
+	return "";
+}
 function title() { return document.getElementById("title").textContent.trim(); }
-function source() { return document.getElementById("source").textContent.trim().slice(8); }
+function editor() { return document.getElementById("editor").textContent.trim().slice("Editor: ".length); }
 function subtitlePath() { return "subtitles/" + filename() + ".ass"; }
 function isTouchDevice() { return (('ontouchstart' in window) || (navigator.MaxTouchPoints > 0) || (navigator.msMaxTouchPoints > 0)); }
 
 window.onload = function() {
-  // Fix menu button. It is set in HTML to be a link to the FAQ page for anyone who has disabled JavaScript.
-  document.getElementById("menubutton").outerHTML = '<span id="menubutton" class="quadbutton fa fa-bars" onclick="showMenu()"></span>';
+	// Fix menu button. It is set in HTML to be a link to the FAQ page for anyone who has disabled JavaScript.
+	document.getElementById("menubutton").outerHTML = '<span id="menubutton" class="quadbutton fa fa-bars" onclick="showMenu()"></span>';
 
-  // Set/Get history state
-  if (history.state == null) {
-    var state = {file: filename() + fileext(), source: source(), title: title()};
-    document.title = state.title + " from " + state.source;
-    if (document.getElementById("song").innerHTML) { // We know the song info
-      var info = document.getElementById("song").innerHTML.replace("Song: \"","").split("\" by ");
-      state.song = {title: info[0], artist: info[1]};
-    }
-    if ($("#subtitles-button").is(":visible")) // Subtitles are available
-      state.subtitles = getSubtitleAttribution().slice(1,-1);
-    history.replaceState({video: [state], list: []}, document.title, location.origin + location.pathname + (location.search ? "?video=" + filename() : ""));
-  } else popHist();
+	// Set/Get history state
+	if (history.state == null) {
+		var state = {file: filename() + fileext(), editor: editor(), title: title()};
+		document.title = state.title + " from " + state.editor;
+		if (document.getElementById("song").innerHTML) { // We know the song info
+			var info = document.getElementById("song").innerHTML.replace("Song: \"","").split("\" by ");
+			state.song = {title: info[0], artist: info[1]};
+		}
+		if ($("#subtitles-button").is(":visible")) // Subtitles are available
+			state.subtitles = getSubtitleAttribution().slice(1,-1);
+		history.replaceState({video: [state], list: []}, document.title, location.origin + location.pathname + (location.search ? "?video=" + filename() : ""));
+	} else popHist();
 
-  try { if ("localStorage" in window && window["localStorage"] !== null) storageSupported = true; } catch(e) { }
-  if (storageSupported) {
-    if (window.localStorage["autonext"] == "true") toggleAutonext();
-  }
+	try { if ("localStorage" in window && window["localStorage"] !== null) storageSupported = true; } catch(e) { }
+	if (storageSupported) {
+		if (window.localStorage["autonext"] == "true") toggleAutonext();
+	}
 
-  const video = document.getElementById("bgvid");
+	const video = document.getElementById("bgvid");
 
-  // autoplay
-  if (video.paused) playPause();
+	// autoplay
+	if (video.paused) playPause();
 
-  // Pause/Play video on click event listener
-  video.addEventListener("click", playPause);
+	// Pause/Play video on click event listener
+	video.addEventListener("click", playPause);
 
-  /* The 'ended' event does not fire if loop is set. We want it to fire, so we
-  need to remove the loop attribute. We don't want to remove loop from the base
-  html so that it does still loop for anyone who has disabled JavaScript. */
-  video.removeAttribute("loop");
+	/* The 'ended' event does not fire if loop is set. We want it to fire, so we
+	   need to remove the loop attribute. We don't want to remove loop from the base
+	   html so that it does still loop for anyone who has disabled JavaScript. */
+	video.removeAttribute("loop");
 
-  // Progress bar event listeners
-  video.addEventListener("progress", updateprogress); // on video loading progress
-  video.addEventListener("timeupdate", updateplaytime); // on time progress
+	// Progress bar event listeners
+	video.addEventListener("progress", updateprogress); // on video loading progress
+	video.addEventListener("timeupdate", updateplaytime); // on time progress
 
-  // Progress bar seeking
-  $(document).on("click", "#progressbar", function(e) {
-    const percentage = e.pageX / $(document).width();
-    skip((video.duration * percentage) - video.currentTime);
-  });
+	// Progress bar seeking
+	$(document).on("click", "#progressbar", function(e) {
+			const percentage = e.pageX / $(document).width();
+			skip((video.duration * percentage) - video.currentTime);
+			});
 
-  // Mobile swipe event listeners
-  document.addEventListener("touchstart", handleTouchStart);
-  document.addEventListener("touchmove", handleTouchMove);
+	// Mobile swipe event listeners
+	document.addEventListener("touchstart", handleTouchStart);
+	document.addEventListener("touchmove", handleTouchMove);
 
-  // Mouse wheel functions
-  const wheelEvent = isEventSupported("wheel") ? "wheel" : "mousewheel";
-  $(document).on(wheelEvent, function(e) {
-    const oEvent = e.originalEvent;
-    const delta  = oEvent.deltaY || oEvent.wheelDelta;
-    if (delta > 0) // Scrolled down
-      changeVolume(-0.05);
-    else if (delta < 0) // Scrolled up
-      changeVolume(0.05);
-  });
-  
-  // Mouse move event listener
-  document.addEventListener("mousemove", aniopMouseMove);
-  
-  // Tooltip event listeners
-  $("#menubutton").hover(tooltip);
-  $(".controlsleft").children().hover(tooltip);
-  $(".controlsright").children().hover(tooltip);
-  
-  // Fullscreen change event listeners
-  document.addEventListener("fullscreenchange", aniopFullscreenChange);
-  document.addEventListener("webkitfullscreenchange", aniopFullscreenChange);
-  document.addEventListener("mozfullscreenchange", aniopFullscreenChange);
-  document.addEventListener("MSFullscreenChange", aniopFullscreenChange);
+	// Mouse wheel functions
+	const wheelEvent = isEventSupported("wheel") ? "wheel" : "mousewheel";
+	$(document).on(wheelEvent, function(e) {
+			const oEvent = e.originalEvent;
+			const delta  = oEvent.deltaY || oEvent.wheelDelta;
+			if (delta > 0) // Scrolled down
+			changeVolume(-0.05);
+			else if (delta < 0) // Scrolled up
+			changeVolume(0.05);
+			});
+
+	// Mouse move event listener
+	document.addEventListener("mousemove", aniopMouseMove);
+
+	// Tooltip event listeners
+	$("#menubutton").hover(tooltip);
+	$(".controlsleft").children().hover(tooltip);
+	$(".controlsright").children().hover(tooltip);
+
+	// Fullscreen change event listeners
+	document.addEventListener("fullscreenchange", aniopFullscreenChange);
+	document.addEventListener("webkitfullscreenchange", aniopFullscreenChange);
+	document.addEventListener("mozfullscreenchange", aniopFullscreenChange);
+	document.addEventListener("MSFullscreenChange", aniopFullscreenChange);
+	getVideolist();
 };
 
 window.onpopstate = popHist;
 function popHist() {
-  if (history.state == "list") history.go();
+	initial = false;
+	if (history.state == "list") history.go();
 
-  if (history.state.list == "") {
-    vNum = 0;
-    video_obj = history.state.video;
-  } else {
-    vNum = history.state.video;
-    video_obj = history.state.list;
-  }
-  setVideoElements();
-  resetSubtitles();
-  playPause();
-  ++vNum;
+	if (history.state.list == "") {
+		vNum = 0;
+		video_obj = history.state.video;
+	} else {
+		vNum = history.state.video;
+		video_obj = history.state.list;
+	}
+	setVideoElements();
+	resetSubtitles();
+	playPause();
+	++vNum;
 }
 
 // Hide mouse, progress bar, and controls if mouse has not moved for 3 seconds
 // and the menu is not open. Will not hide the tooltip or a button that is
 // being hovered over.
 function aniopMouseMove(event) {
-  // If it is not a mobile device.
-  if (xDown == null)
-  {
-    $(".quadbutton").addClass("quadNotMobile");
-    
-    // If the mouse has actually moved.
-    if (event.clientX != lastMousePos.x || event.clientY != lastMousePos.y)
-    {
-      clearTimeout(mouseIdle);
+	// If it is not a mobile device.
+	if (xDown == null)
+	{
+		$(".quadbutton").addClass("quadNotMobile");
 
-      document.getElementsByTagName("html")[0].style.cursor = "";
-      $("#progressbar").removeClass("mouse-idle");
-      $("#menubutton").removeClass("mouse-idle");
-      $(".controlsleft").children().removeClass("mouse-idle");
-      $(".controlsright").children().removeClass("mouse-idle");
+		// If the mouse has actually moved.
+		if (event.clientX != lastMousePos.x || event.clientY != lastMousePos.y)
+		{
+			clearTimeout(mouseIdle);
 
-      // If the menu is not open.
-      if (document.getElementById("site-menu").hasAttribute("hidden")) {
-        mouseIdle = setTimeout(function() {
-          $("#progressbar").addClass("mouse-idle");
-          $("#menubutton").addClass("mouse-idle");
-          $(".controlsleft").children().addClass("mouse-idle");
-          $(".controlsright").children().addClass("mouse-idle");
-          document.getElementsByTagName("html")[0].style.cursor = "none";
-        }, 3000);
-      }
-      
-      lastMousePos = {"x":event.clientX,"y":event.clientY};
-    }
-  }
+			document.getElementsByTagName("html")[0].style.cursor = "";
+			$("#progressbar").removeClass("mouse-idle");
+			$("#menubutton").removeClass("mouse-idle");
+			$(".controlsleft").children().removeClass("mouse-idle");
+			$(".controlsright").children().removeClass("mouse-idle");
+
+			// If the menu is not open.
+			if (document.getElementById("site-menu").hasAttribute("hidden")) {
+				mouseIdle = setTimeout(function() {
+						$("#progressbar").addClass("mouse-idle");
+						$("#menubutton").addClass("mouse-idle");
+						$(".controlsleft").children().addClass("mouse-idle");
+						$(".controlsright").children().addClass("mouse-idle");
+						document.getElementsByTagName("html")[0].style.cursor = "none";
+						}, 3000);
+			}
+
+			lastMousePos = {"x":event.clientX,"y":event.clientY};
+		}
+	}
 }
 
 // get shuffled list of videos with current video first
 function getVideolist() {
-  document.getElementById("bgvid").setAttribute("hidden", "");
-  tooltip("Loading...", "bottom: 50%; left: 50%; bottom: calc(50% - 16.5px); left: calc(50% - 46.5px); null");
+	document.getElementById("bgvid").setAttribute("hidden", "");
+	//tooltip("Loading...", "bottom: 50%; left: 50%; bottom: calc(50% - 16.5px); left: calc(50% - 46.5px); null");
 
-  $.ajaxSetup({async: false});
-  $.getJSON("api/list.php?shuffle&first=" + filename() + fileext(), function(json) {
-    video_obj = json;
-    vNum = 1;
-  });
-  $.ajaxSetup({async: true});
+	$.getJSON("/videos.json", finishGettingVideoList);
 
-  tooltip();
-  document.getElementById("bgvid").removeAttribute("hidden");
+}
+function finishGettingVideoList(json) {
+	console.log(json);
+	video_obj = [];
+	for (var editor_name in json) {
+		var editor = json[editor_name];
+		for (var video_name in editor) {
+			var video = editor[video_name];
+			video.editor = editor_name;
+			video.title = video_name;
+			video_obj.push(video);
+		}
+	}
+	shuffleArray(video_obj);
+	var file = filename() + fileext();
+
+	vNum = 1;
+
+	//tooltip();
+	if (initial) {
+		initial = false;
+		if ($.urlParam("video") != undefined) {
+			vNum = findVideoByFile($.urlParam("video"));
+			retrieveNewVideo();
+		} else {
+			retrieveNewVideo();
+		}
+	}
+	document.getElementById("bgvid").removeAttribute("hidden");
+}
+
+function findVideoByFile(file) {
+	for (var video in video_obj) {
+		if (video_obj[video]["file"].startsWith(file))
+			return video;
+	}
+}
+
+function shuffleArray(array) {
+	for (var i = array.length - 1; i > 0; i--) {
+		var j = Math.floor(Math.random() * (i + 1));
+		var temp = array[i];
+		array[i] = array[j];
+		array[j] = temp;
+	}
+	return array;
 }
 
 function retrieveNewVideo() {
-  if (video_obj.length <= 1) getVideolist();
+	if (video_obj.length <= 1) getVideolist();
 
-  // just in case
-  if (video_obj.length == 0) return;
-  if (vNum >= video_obj.length) vNum = 0;
+	// just in case
+	if (video_obj.length == 0) return;
+	if (vNum >= video_obj.length) vNum = 0;
 
-  // When the end of the list is reached, go back to the beginning. Only do this once per function call.
-  for (var start = vNum, end = video_obj.length, counter = 2; counter > 0; --counter) {
-    if (vNum >= end) {
-      vNum = 0;
-      end = start
-    } else break;
-  }
+	// When the end of the list is reached, go back to the beginning. Only do this once per function call.
+	for (var start = vNum, end = video_obj.length, counter = 2; counter > 0; --counter) {
+		if (vNum >= end) {
+			vNum = 0;
+			end = start
+		} else break;
+	}
 
-  setVideoElements();
+	setVideoElements();
 
-  history.pushState({video: vNum, list: video_obj}, document.title, location.origin + location.pathname);
+	history.pushState({video: vNum, list: video_obj}, document.title, location.origin + location.pathname);
 
-  resetSubtitles();
-  document.getElementById("bgvid").play();
-  document.getElementById("pause-button").classList.remove("fa-play");
-  document.getElementById("pause-button").classList.add("fa-pause");
+	resetSubtitles();
+	document.getElementById("bgvid").play();
+	document.getElementById("pause-button").classList.remove("fa-play");
+	document.getElementById("pause-button").classList.add("fa-pause");
 
-  ++vNum;
+	++vNum;
 }
 
 function setVideoElements() {
-  function videoMIMEsubtype(filename) {
-    filename = filename.replace(filename.replace(/\.\w+$/, ""), "");
+	function videoMIMEsubtype(filename) {
+		filename = filename.replace(filename.replace(/\.\w+$/, ""), "");
 		switch (filename) {
 			case ".mp4":
 			case ".m4v":
@@ -211,368 +270,379 @@ function setVideoElements() {
 			default:
 				return "*";
 		}
-  }
+	}
 
-  const video = video_obj[vNum];
+	const video = video_obj[vNum];
 
-  document.getElementsByTagName("source")[0].src = "video/" + video.file;
-  document.getElementsByTagName("source")[0].type = "video/" + videoMIMEsubtype(video.file);
-  document.getElementById("bgvid").load();
-  document.getElementById("subtitle-attribution").innerHTML = (video.subtitles ? "[" + video.subtitles + "]" : "");
-  document.title = video.title + " from " + video.source;
-  document.getElementById("title").innerHTML = video.title;
-  document.getElementById("source").innerHTML = "Editor: " + video.source;
-  document.getElementById("videolink").parentNode.removeAttribute("hidden");
-  document.getElementById("videodownload").parentNode.removeAttribute("hidden");
-  document.getElementById("videolink").href = "/?video=" + video.file.replace(/\.\w+$/, "");
-  document.getElementById("videodownload").href = "video/" + video.file;
+	document.getElementsByTagName("source")[0].src = "video/" + video.file;
+	document.getElementsByTagName("source")[0].type = "video/" + videoMIMEsubtype(video.file);
+	document.getElementById("bgvid").load();
+	document.getElementById("subtitle-attribution").innerHTML = (video.subtitles ? "[" + video.subtitles + "]" : "");
+	document.title = video.title + " by " + video.editor;
+	document.getElementById("title").innerHTML = video.title;
+	document.getElementById("editor").innerHTML = "Editor: " + video.editor;
+	document.getElementById("videolink").parentNode.removeAttribute("hidden");
+	document.getElementById("videodownload").parentNode.removeAttribute("hidden");
+	document.getElementById("videolink").href = "/?video=" + video.file.replace(/\.\w+$/, "");
+	document.getElementById("videodownload").href = "video/" + video.file;
 
 
-  var song = "";
-  song = "Song: &quot;" + video.song.title + "&quot; by " + video.song.artist;
-  document.getElementById("song").innerHTML = song;
+	var song = "";
+	if (video.song != undefined) {
+		song = "Song: &quot;" + video.song.title + "&quot; by " + video.song.artist;
+	}
+	document.getElementById("song").innerHTML = song;
 
-  // Set button to show play icon.
-  $("#pause-button").removeClass("fa-pause").addClass("fa-play");
+	// Set button to show play icon.
+	$("#pause-button").removeClass("fa-pause").addClass("fa-play");
 }
 
 // Menu Visibility Functions
 function menuIsHidden() {
-  return document.getElementById("site-menu").hasAttribute("hidden");
+	return document.getElementById("site-menu").hasAttribute("hidden");
 }
 function showMenu() {
-  if (xDown != null) tooltip(); // Hide the tooltip on mobile.
-  clearTimeout(mouseIdle); // Stop things from being hidden on idle.
-  $("#menubutton").hide();
-  document.getElementById("site-menu").removeAttribute("hidden");
+	if (xDown != null) tooltip(); // Hide the tooltip on mobile.
+	clearTimeout(mouseIdle); // Stop things from being hidden on idle.
+	$("#menubutton").hide();
+	document.getElementById("site-menu").removeAttribute("hidden");
 }
 function hideMenu() {
-  if (xDown != null) tooltip(); // Hide the tooltip on mobile.
-  $("#menubutton").show();
-  document.getElementById("site-menu").setAttribute("hidden", "");
+	if (xDown != null) tooltip(); // Hide the tooltip on mobile.
+	$("#menubutton").show();
+	document.getElementById("site-menu").setAttribute("hidden", "");
 }
 function toggleMenu() {
-  if (menuIsHidden()) showMenu();
-  else hideMenu();
+	if (menuIsHidden()) showMenu();
+	else hideMenu();
 }
 
 // Play/Pause Button
 function playPause() {
-  const video = document.getElementById("bgvid");
-  if (video.paused) video.play();
-  else video.pause();
+	const video = document.getElementById("bgvid");
+	if (video.paused) video.play();
+	else video.pause();
 
-  // Toggle Tooltip
-  tooltip();
-  tooltip("pause-button");
+	// Toggle Tooltip
+	//tooltip();
+	//tooltip("pause-button");
 
-  // Toggle Play/Pause Icon
-  $("#pause-button").toggleClass("fa-play").toggleClass("fa-pause");
+	// Toggle Play/Pause Icon
+	$("#pause-button").toggleClass("fa-play").toggleClass("fa-pause");
 }
 
 // Video Seek Function
 function skip(value) {
-  // Retrieves the video's DOM object, and then adds to the current
-  // position in time the value given by the function parameters.
-  const video = document.getElementById("bgvid");
-  video.currentTime += value;
+	// Retrieves the video's DOM object, and then adds to the current
+	// position in time the value given by the function parameters.
+	const video = document.getElementById("bgvid");
+	video.currentTime += value;
 
-  // Calculates the current time in minutes and seconds.
-  const minutes = Math.floor(video.currentTime / 60);
-  const seconds = Math.floor(video.currentTime - (60 * minutes));
+	// Calculates the current time in minutes and seconds.
+	const minutes = Math.floor(video.currentTime / 60);
+	const seconds = Math.floor(video.currentTime - (60 * minutes));
 
-  // Displays the current time.
-  displayTopRight(minutes + ":" + (seconds < 10 ? "0" : "") + seconds);
+	// Displays the current time.
+	displayTopRight(minutes + ":" + (seconds < 10 ? "0" : "") + seconds);
 }
 
 // Fullscreen Functions
 function isFullscreen() {
-  return Boolean(document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement);
+	return Boolean(document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement);
 }
 function toggleFullscreen() {
-  if (isFullscreen()) {
-    if (document.exitFullscreen) document.exitFullscreen();
-    else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
-    else if (document.mozCancelFullScreen) document.mozCancelFullScreen();
-    else if (document.msExitFullscreen) document.msExitFullscreen();
-  } else {
-    const e = document.getElementsByTagName("html")[0];
-    if (e.requestFullscreen) e.requestFullscreen();
-    else if (e.webkitRequestFullscreen) e.webkitRequestFullscreen();
-    else if (e.mozRequestFullScreen) e.mozRequestFullScreen();
-    else if (e.msRequestFullscreen) e.msRequestFullscreen();
-  }
+	if (isFullscreen()) {
+		if (document.exitFullscreen) document.exitFullscreen();
+		else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+		else if (document.mozCancelFullScreen) document.mozCancelFullScreen();
+		else if (document.msExitFullscreen) document.msExitFullscreen();
+	} else {
+		const e = document.getElementsByTagName("html")[0];
+		if (e.requestFullscreen) e.requestFullscreen();
+		else if (e.webkitRequestFullscreen) e.webkitRequestFullscreen();
+		else if (e.mozRequestFullScreen) e.mozRequestFullScreen();
+		else if (e.msRequestFullscreen) e.msRequestFullscreen();
+	}
 
-  // Toggle Tooltip
-  tooltip();
-  tooltip("fullscreen-button");
+	// Toggle Tooltip
+	tooltip();
+	tooltip("fullscreen-button");
 }
 function aniopFullscreenChange() {
-  var button = document.getElementById("fullscreen-button");
-  
-  if (isFullscreen()) {
-    button.classList.remove("fa-expand");
-    button.classList.add("fa-compress");
-  } else {
-    button.classList.remove("fa-compress");
-    button.classList.add("fa-expand");
-  }
+	var button = document.getElementById("fullscreen-button");
+
+	if (isFullscreen()) {
+		button.classList.remove("fa-expand");
+		button.classList.add("fa-compress");
+	} else {
+		button.classList.remove("fa-compress");
+		button.classList.add("fa-expand");
+	}
 }
 
 // Autonext by Howl
 function toggleAutonext() {
-  autonext = !autonext;
-  if (autonext) {
-    $("#autonext").removeClass("fa-toggle-off").addClass("fa-toggle-on");
-    document.getElementById("bgvid").removeAttribute("loop");
-  } else {
-    $("#autonext").removeClass("fa-toggle-on").addClass("fa-toggle-off");
-    document.getElementById("bgvid").setAttribute("loop", "");
-  }
+	autonext = !autonext;
+	if (autonext) {
+		$("#autonext").removeClass("fa-toggle-off").addClass("fa-toggle-on");
+		document.getElementById("bgvid").removeAttribute("loop");
+	} else {
+		$("#autonext").removeClass("fa-toggle-on").addClass("fa-toggle-off");
+		document.getElementById("bgvid").setAttribute("loop", "");
+	}
 
-  if (storageSupported) window.localStorage["autonext"] = autonext;
+	if (storageSupported) window.localStorage["autonext"] = autonext;
 
-  // Toggle Tooltip
-  tooltip();
-  tooltip("autonext");
+	// Toggle Tooltip
+	tooltip();
+	tooltip("autonext");
 }
 
 // what to do when the video ends
 function onend() {
-  if (autonext || document.title == "Secret~") retrieveNewVideo();
-  else document.getElementById("bgvid").play(); // loop
+	if (initial) return;
+	if (autonext || document.title == "Secret~") retrieveNewVideo();
+	else document.getElementById("bgvid").play(); // loop
 }
 
 // Overused tooltip code
 function tooltip(text, css) {
-  if (isTouchDevice()) return;
-  var eventType;
-  if (text && text.target) {
-    eventType = text.type;
-    text = text.target.id;
-  }
-  
-  switch (text) {
-    case "menubutton":
-      text = "Menu (M)";
-      css = "top: 65px; bottom: auto; left";
-      break;
-    case "getnewvideo":
-      text = "Click to get a new video (N)";
-      css = "left";
-      break;
-    case "autonext":
-      if (autonext) text = "Click to loop video instead of getting a new one";
-      else text = "Click to get a new video instead of looping";
-      css = "left";
-      break;
-    case "skip-left":
-      text = "Click to go back 10 seconds (left arrow)";
-      css = "right";
-      break;
-    case "skip-right":
-      text = "Click to go forward 10 seconds (right arrow)";
-      css = "right";
-      break;
-    case "pause-button":
-      if (!document.getElementById("bgvid").paused) text = "Click to pause the video (spacebar)";
-      else text = "Click to play the video (spacebar)";
-      css = "right";
-      break;
-    case "fullscreen-button":
-      if(isFullscreen()) text = "Click to exit fullscreen (F)";
-      else text = "Click to enter fullscreen (F)";
-      css = "right";
-      break;
-    case "subtitles-button":
-      if(subsOn()) text = "Click to disable subtitles (S)";
-      else text = "Click to enable subtitles (S)";
-      css = "right";
-  }
+	if (isTouchDevice()) return;
+	var eventType;
+	if (text && text.target) {
+		eventType = text.type;
+		text = text.target.id;
+	}
 
-  const element = document.getElementById("tooltip");
-  element.removeAttribute("style");
-  if (css != "") element.setAttribute("style", css + ": 10px;");
-  element.innerHTML = text;
-  element.classList.toggle("is-hidden", eventType && eventType === "mouseleave");
-  element.classList.toggle("is-visible", eventType && eventType === "mouseenter");
+	switch (text) {
+		case "menubutton":
+			text = "Menu (M)";
+			css = "top: 65px; bottom: auto; left";
+			break;
+		case "getnewvideo":
+			text = "Click to get a new video (N)";
+			css = "left";
+			break;
+		case "autonext":
+			if (autonext) text = "Click to loop video instead of getting a new one";
+			else text = "Click to get a new video instead of looping";
+			css = "left";
+			break;
+		case "skip-left":
+			text = "Click to go back 10 seconds (left arrow)";
+			css = "right";
+			break;
+		case "skip-right":
+			text = "Click to go forward 10 seconds (right arrow)";
+			css = "right";
+			break;
+		case "pause-button":
+			if (!document.getElementById("bgvid").paused) text = "Click to pause the video (spacebar)";
+			else text = "Click to play the video (spacebar)";
+			css = "right";
+			break;
+		case "fullscreen-button":
+			if(isFullscreen()) text = "Click to exit fullscreen (F)";
+			else text = "Click to enter fullscreen (F)";
+			css = "right";
+			break;
+		case "subtitles-button":
+			if(subsOn()) text = "Click to disable subtitles (S)";
+			else text = "Click to enable subtitles (S)";
+			css = "right";
+		case undefined:
+			return;
+	}
+
+	const element = document.getElementById("tooltip");
+	element.removeAttribute("style");
+	if (css != "") element.setAttribute("style", css + ": 10px;");
+	element.innerHTML = text;
+	element.classList.toggle("is-hidden", eventType && eventType === "mouseleave");
+	element.classList.toggle("is-visible", eventType && eventType === "mouseenter");
 }
 
 // Keyboard functions
 $(document).keydown(function(e) {
-    switch(e.which) {
-      case 32: // Space
-        playPause();
-        break;
-      case 33: // Page Up
-        changeVolume(0.05);
-        break;
-      case 34: // Page Down
-        changeVolume(-0.05);
-        break;
-      case 37: // Left Arrow
-        skip(-10);
-        break;
-      case 39: // Right Arrow
-        skip(10);
-        break;
-      case 70: // F
-      case 122: // F11
-        toggleFullscreen();
-        break;
-      case 77: // M
-        toggleMenu();
-        break;
-      case 78: // N
-        retrieveNewVideo();
-        break;
-      case 83: // S
-        toggleSubs();
-        break;
-      default:
-        return;
-    }
-    e.preventDefault();
+		switch(e.which) {
+		case 32: // Space
+		playPause();
+		break;
+		case 33: // Page Up
+		changeVolume(0.05);
+		break;
+		case 34: // Page Down
+		changeVolume(-0.05);
+		break;
+		case 37: // Left Arrow
+		skip(-10);
+		break;
+		case 39: // Right Arrow
+		skip(10);
+		break;
+		case 70: // F
+		case 122: // F11
+		toggleFullscreen();
+		break;
+		case 77: // M
+		toggleMenu();
+		break;
+		case 78: // N
+		retrieveNewVideo();
+		break;
+		case 83: // S
+		toggleSubs();
+		break;
+		default:
+		return;
+		}
+		e.preventDefault();
 });
 
 // checks if an event is supported
 function isEventSupported(eventName) {
-  const el = document.createElement("div");
-  eventName = "on" + eventName;
-  var isSupported = (eventName in el);
+	const el = document.createElement("div");
+	eventName = "on" + eventName;
+	var isSupported = (eventName in el);
 
-  if (!isSupported) {
-    el.setAttribute(eventName, "return;");
-    isSupported = typeof el[eventName] === "function";
-  }
+	if (!isSupported) {
+		el.setAttribute(eventName, "return;");
+		isSupported = typeof el[eventName] === "function";
+	}
 
-  return isSupported;
+	return isSupported;
 }
 
 // change volume
 function changeVolume(amount) {
-  const video = document.getElementById("bgvid");
-  if (video.volume > 0 && amount < 0)
-    video.volume = (video.volume + amount).toPrecision(2);
-  else if (video.volume < 1 && amount > 0)
-    video.volume = (video.volume + amount).toPrecision(2);
+	const video = document.getElementById("bgvid");
+	if (video.volume > 0 && amount < 0)
+		video.volume = (video.volume + amount).toPrecision(2);
+	else if (video.volume < 1 && amount > 0)
+		video.volume = (video.volume + amount).toPrecision(2);
 
-  var percent = (video.volume * 100);
-  if (video.volume < 0.1)
-    percent = percent.toPrecision(1);
-  else if (video.volume == 1)
-    percent = percent.toPrecision(3);
-  else
-    percent = percent.toPrecision(2);
+	var percent = (video.volume * 100);
+	if (video.volume < 0.1)
+		percent = percent.toPrecision(1);
+	else if (video.volume == 1)
+		percent = percent.toPrecision(3);
+	else
+		percent = percent.toPrecision(2);
 
-  displayTopRight(percent + "%");
+	displayTopRight(percent + "%");
 }
 
 // display text in the top right of the screen
 function displayTopRight(text,delay) {
-  const disp = $(".displayTopRight");
-  disp.stop(true,true);
-  disp.text(text);
-  disp.show();
-  disp.delay(delay?delay:0).fadeOut(1000);
+	const disp = $(".displayTopRight");
+	disp.stop(true,true);
+	disp.text(text);
+	disp.show();
+	disp.delay(delay?delay:0).fadeOut(1000);
 }
 
 // set video progress bar buffered length
 function updateprogress() {
-  const video = document.getElementById("bgvid"); // get video element
-  const buffered = ((video.buffered && video.buffered.length) ? 100 * (video.buffered.end(0) / video.duration) : (video.readyState == 4 ? 100 : 0)); // calculate buffered data in percent
-  document.getElementById("bufferprogress").style.width = buffered + "%"; // update progress bar width
+	const video = document.getElementById("bgvid"); // get video element
+	const buffered = ((video.buffered && video.buffered.length) ? 100 * (video.buffered.end(0) / video.duration) : (video.readyState == 4 ? 100 : 0)); // calculate buffered data in percent
+	document.getElementById("bufferprogress").style.width = buffered + "%"; // update progress bar width
 }
 
 // set video progress bar played length
 function updateplaytime() {
-  const video = document.getElementById("bgvid"); // get video element
-  const watched = 100 * (video.currentTime / video.duration); // calculate current time in percent
-  document.getElementById("timeprogress").style.width = watched + "%"; // update progress bar width
+	const video = document.getElementById("bgvid"); // get video element
+	const watched = 100 * (video.currentTime / video.duration); // calculate current time in percent
+	document.getElementById("timeprogress").style.width = watched + "%"; // update progress bar width
 }
 
 // get mobile swipe start location
 function handleTouchStart(evt) {
-  xDown = evt.touches[0].clientX;
-  yDown = evt.touches[0].clientY;
+	xDown = evt.touches[0].clientX;
+	yDown = evt.touches[0].clientY;
 }
 
 // handle mobile swipe
 function handleTouchMove(evt) {
-  if (!xDown && !yDown) return;
+	if (!xDown && !yDown) return;
 
-  const xDiff = xDown - evt.touches[0].clientX;
-  const yDiff = yDown - evt.touches[0].clientY;
+	const xDiff = xDown - evt.touches[0].clientX;
+	const yDiff = yDown - evt.touches[0].clientY;
 
-  // detect swipe in the most significant direction
-  if (Math.abs(xDiff) > Math.abs(yDiff)) {
-    if (xDiff > 0) {
-      /* left swipe */
-    } else {
-      /* right swipe */
-    }
-  } else {
-    if (yDiff > 0) {
-      /* up swipe */
-      $(".progress").height(2);
-    } else {
-      /* down swipe */
-      $(".progress").height(15);
-    }
-  }
+	// detect swipe in the most significant direction
+	if (Math.abs(xDiff) > Math.abs(yDiff)) {
+		if (xDiff > 0) {
+			/* left swipe */
+		} else {
+			/* right swipe */
+		}
+	} else {
+		if (yDiff > 0) {
+			/* up swipe */
+			$(".progress").height(2);
+		} else {
+			/* down swipe */
+			$(".progress").height(15);
+		}
+	}
 
-  // reset values
-  xDown = null;
-  yDown = null;
+	// reset values
+	xDown = null;
+	yDown = null;
 }
 
 // Subtitle Funtions
 function getSubtitleAttribution() {
-  return document.getElementById("subtitle-attribution").textContent;
+	return document.getElementById("subtitle-attribution").textContent;
 }
 function subsAvailable() {
-  const HS = history.state;
-  return Boolean((HS.video[0] && HS.video[0].subtitles) || (HS.list[HS.video] && HS.list[HS.video].subtitles));
+	const HS = history.state;
+	return Boolean((HS.video[0] && HS.video[0].subtitles) || (HS.list[HS.video] && HS.list[HS.video].subtitles));
 }
 function subsOn() {
-  return Boolean(document.getElementById("bgvid").subtitles);
+	return Boolean(document.getElementById("bgvid").subtitles);
 }
 function resetSubtitles() {
-  if (subsAvailable()) {
-    $("#subtitles-button").show();
-    $("#subs").show();
-	var temp = document.getElementById("wrapper").children;
-    if (subsOn()) initializeSubtitles(temp[0], temp[1], subtitlePath());
-  } else {
-    $("#subtitles-button").hide();
-    $("#subs").hide();
-    if (subsOn()) {
-      removeSubtitles(document.getElementById("bgvid"));
-      document.getElementById("bgvid").subtitles = "Not available"; // Must be defined to flag that subtitles are toggled on
-    }
-  }
+	if (subsAvailable()) {
+		$("#subtitles-button").show();
+		$("#subs").show();
+		var temp = document.getElementById("wrapper").children;
+		if (subsOn()) initializeSubtitles(temp[0], temp[1], subtitlePath());
+	} else {
+		$("#subtitles-button").hide();
+		$("#subs").hide();
+		if (subsOn()) {
+			removeSubtitles(document.getElementById("bgvid"));
+			document.getElementById("bgvid").subtitles = "Not available"; // Must be defined to flag that subtitles are toggled on
+		}
+	}
 }
 function toggleSubs() {
-  if (subsAvailable()) {
-    if (subsOn()) {
-      $("#subtitles-button").addClass("fa-commenting-o").removeClass("fa-commenting");
-      removeSubtitles(document.getElementById("bgvid"));
-      displayTopRight("Disabled Subtitles", 1000);
-	} else {
-      $("#subtitles-button").addClass("fa-commenting").removeClass("fa-commenting-o");
-      var temp = document.getElementById("wrapper").children;
-      initializeSubtitles(temp[0], temp[1], subtitlePath());
-      displayTopRight("Enabled Subtitles by " + getSubtitleAttribution(), 3000);
+	if (subsAvailable()) {
+		if (subsOn()) {
+			$("#subtitles-button").addClass("fa-commenting-o").removeClass("fa-commenting");
+			removeSubtitles(document.getElementById("bgvid"));
+			displayTopRight("Disabled Subtitles", 1000);
+		} else {
+			$("#subtitles-button").addClass("fa-commenting").removeClass("fa-commenting-o");
+			var temp = document.getElementById("wrapper").children;
+			initializeSubtitles(temp[0], temp[1], subtitlePath());
+			displayTopRight("Enabled Subtitles by " + getSubtitleAttribution(), 3000);
+		}
 	}
-  }
 }
 function initializeSubtitles(subContainer, videoElem, subFile) {
-  removeSubtitles(videoElem);
-  videoElem.subtitles = new subtitleRenderer(subContainer, videoElem, subFile);
+	removeSubtitles(videoElem);
+	videoElem.subtitles = new subtitleRenderer(subContainer, videoElem, subFile);
 }
 function removeSubtitles(videoElem) {
-  if(subsOn() && videoElem.subtitles.shutItDown) {
-    videoElem.subtitles.shutItDown();
-    videoElem.subtitles = null;
-  }
+	if(subsOn() && videoElem.subtitles.shutItDown) {
+		videoElem.subtitles.shutItDown();
+		videoElem.subtitles = null;
+	}
+}
+
+$.urlParam = function(name){
+	var results = new RegExp('[\?&]' + name + '=([^&#]*)').exec(window.location.href);
+	if (results != undefined) return results[1];
+	else return undefined;
 }

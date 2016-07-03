@@ -4,8 +4,8 @@ var playlistBot;
 var RegExEnabled = false;
 
 function setup() {
-	// get list of series elements and set their id
-	list = document.getElementsByClassName("series");
+	// get list of editor elements and set their id
+	list = document.getElementsByClassName("editor");
 	for (let i = 0; i < list.length; ++i)
 		list[i].id = list[i].childNodes[0].nodeValue;
 
@@ -26,22 +26,6 @@ function setup() {
 		addVideoButton.title = "Click to add this video to your playlist";
 		addVideoButton.addEventListener("click", playlistAdd);
 		addVideoButton.nextElementSibling.className = "video";
-
-		// Add 'cc' icon after videos that have subtitles.
-		if (addVideoButton.hasAttribute("subtitles")) {
-			var newNode = document.createElement("i");
-				newNode.className = "fa fa-cc";
-				newNode.title = "[" + addVideoButton.getAttribute("subtitles") + "] subtitles are available for this video";
-			addVideoButton.parentNode.insertBefore(newNode, addVideoButton.nextElementSibling.nextElementSibling);
-		}
-
-		// Add 'music' icon after videos that we have song info for.
-		if (addVideoButton.hasAttribute("songtitle")) {
-			var newNode = document.createElement("i");
-				newNode.className = "fa fa-music";
-				newNode.title = "\"" + addVideoButton.getAttribute("songtitle") + "\" by " + addVideoButton.getAttribute("songartist");
-			addVideoButton.parentNode.insertBefore(newNode, addVideoButton.nextElementSibling.nextElementSibling);
-		}
 	}
 
 	// add click events to playlist "menu"
@@ -96,20 +80,20 @@ function search() {
 	var anyResults = false;
 
 	for (let i = 0; i < list.length; ++i) {
-		let series = list[i];
+		let editor = list[i];
 		let j = 0;
 
 		while (j < toFindLength) {
 			// If the RegExp doesn't match
-			if (!toFind[j].test(series.id)) {
-				series.setAttribute("hidden", "");
+			if (!toFind[j].test(editor.id)) {
+				editor.setAttribute("hidden", "");
 				break;
 			}
 			
 			++j;
 		}
 
-		let amvs = series.firstElementChild.children;
+		let amvs = editor.firstElementChild.children;
 		for (let i = 0; i < amvs.length; ++i) {
 			let h = 0;
 			while (h < toFindLength) {
@@ -125,7 +109,7 @@ function search() {
 			// If all RegExp's passed
 			if (h == toFindLength) {
 				amvs[i].removeAttribute("hidden");
-				series.removeAttribute("hidden");
+				editor.removeAttribute("hidden");
 				anyResults = true;
 			}
 
@@ -133,7 +117,7 @@ function search() {
 
 		// If all RegExp's passed
 		if (j == toFindLength) {
-			series.removeAttribute("hidden");
+			editor.removeAttribute("hidden");
 			for (let i = 0; i < amvs.length; i++) {
 				amvs[i].removeAttribute("hidden");
 			}
@@ -245,4 +229,54 @@ function loadPlaylist() {
 function startPlaylist() {
 	history.pushState({list: playlist, video: 0}, "Custom Playlist", "/");
 	history.go();
+}
+
+function loadVideoList() {
+	$.getJSON("/videos.json", showResults);
+}
+
+function showResults(videos) {
+	//var editors = Object.keys(videos);
+	//for (let i = 0; i < editors.length; ++i) {
+	var result = "";
+	var editors = Object.keys(videos);
+	$("#editorcount")[0].innerHTML = editors.length;
+	var video_count = 0;
+	for (var editor_name in videos) {
+		var editor = videos[editor_name];
+		result += '<div class="editor">' + editor_name + '<div>\n';
+		for (var video_name in editor) {
+			++video_count;
+			var video = editor[video_name];
+			var file = video["file"];
+			var song = video["song"];
+			var song_title = undefined;
+			var song_artist = undefined;
+			var subtitles = video["subtitles"];
+			var file_base = file.replace(/\.\w+$/, '');
+			var file_ext = file.replace(file_base, '');
+			result += '<div title="' + video_name + '"><i class="fa fa-plus" fext="' + file_ext + '"';
+			if (song != undefined) {
+				song_title = song["title"];
+				song_artist = song["artist"];
+				result += ' songTitle="' + song_title + '" songArtist="' + song_artist + '"';
+			}
+			if (subtitles != undefined) {
+				result += ' subtitles="' + subtitles + '"';
+			}
+			result += '></i>\n';
+			result += '<a href="../?video=' + file_base + '">' + video_name + '</a>\n';
+			if (subtitles != undefined) {
+				result += '<i class="fa fa-cc" title="[' + subtitles + '"] subtitles are available for this video"></i>\n';
+			}
+			if (song != undefined) {
+				result += '<i class="fa fa-music" title="\"' + song_title + '\" by ' + song_artist + '"></i>\n';
+			}
+			result += '\n<br /></div>\n';
+		}
+		result += '</div></div>\n';
+	}
+	$("#videocount")[0].innerHTML = video_count;
+	$("#results")[0].innerHTML = result;
+	setup();
 }

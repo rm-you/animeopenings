@@ -11,7 +11,7 @@ Thumbs.db
 
 # This really doesn't need to be updated #
 ##########################################
-videos.php
+videos.json
 backend/includes/botnet.html
 *.webm
 subtitles/*.ass

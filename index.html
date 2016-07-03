@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html prefix="og: http://ogp.me/ns#">
+	<head>
+		<!-- Basic Page Stuff -->
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<title>Anime Music Videos</title>
+		<meta name="description" content="Anime Music Videos from (eventually) hundreds of editors in high-quality">
+
+		<!-- Open Graph Tags -->
+		<meta property="og:type" content="article" /> <!-- article or video.other -->
+		<meta property="og:url" content="https://amvs.moe" />
+		<meta property="og:site_name" content="amvs.moe" />
+		<meta property="og:title" content="Anime Music Videos" />
+		<meta property="og:description" content="Anime Music Videos from (eventually) hundreds of editors in high-quality" />
+		<meta property="al:web:url" content="https://amvs.moe/" />
+
+		<!-- CSS and JS external resources block -->
+		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css">
+		<link rel="stylesheet" type="text/css" href="CSS/main.css">
+		<link rel="stylesheet" type="text/css" href="CSS/fonts.css">
+		<link rel="stylesheet" type="text/css" href="CSS/subtitles.css">
+
+		<script src="https://code.jquery.com/jquery-2.1.3.min.js"></script>
+		<script src="main.js"></script>
+		<script async src="subtitles/code/math.min.js"></script>
+		<script async src="subtitles/code/fitCurves.js"></script>
+		<script async src="subtitles/code/subtitles.js"></script>
+
+		<!-- Meta tags for web app usage -->
+		<meta name="theme-color" content="#E58B00">
+		<meta name="mobile-web-app-capable" content="yes">
+		<meta name="apple-mobile-web-app-capable" content="yes">
+		<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+		<!-- Logo links -->
+		<link href="/assets/logo/152px.png" rel="apple-touch-icon">
+		<link href="/assets/logo/16px.png" rel="icon" sizes="16x16">
+		<link href="/assets/logo/32px.png" rel="icon" sizes="32x32">
+		<link href="/assets/logo/64px.png" rel="icon" sizes="64x64">
+		<link href="/assets/logo/152px.png" rel="icon" sizes="152x152">
+		<link href="/assets/logo/512px.png" rel="icon" sizes="512x512">
+	</head>
+
+	<body>
+		<div id="wrapper">
+			<svg xmlns="https://www.w3.org/2000/svg" xmlns:xlink="https://www.w3.org/1999/xlink" class="subtitle_container"></svg>
+			<video id="bgvid" loop preload="none" onended="onend()">
+				<source src="" type="">
+				Your web browser does not support WebM video.
+			</video>
+		</div>
+
+		<div id="progressbar" class="progressbar">
+			<div class="progress">
+				<div id="bufferprogress" class="progress"></div>
+				<div id="timeprogress" class="progress"></div>
+			</div>
+		</div>
+
+		<a id="menubutton" href="/hub/faq.html" class="quadbutton fa fa-bars"></a>
+
+		<div id="site-menu" hidden>
+			<span id="closemenubutton" onclick="hideMenu()" class="quadbutton fa fa-times"></span>
+			<p id="title"></p>
+			<p id="editor"></p>
+			<span id="song"></span>
+			<p id="subs" style="display:none">Subtitles by <span id="subtitle-attribution"></span></p>
+
+			<ul id="linkarea">
+				<li class="link"><a href="/?video=" id="videolink">Link to this video</a></li>
+				<li class="link"><a href="video/" id="videodownload" download>Download this video</a></li>
+				<li class="link"><a href="/list/">Video list</a></li>
+				<li class="link"><a href="/hub/">Hub</a></li>
+				<li class="link"><a href="/hub/faq.html#keybindings">Keyboard bindings</a></li>
+			</ul>
+
+			<p class="betanote">This site is in beta. Request AMVs and report errors by mentioning @rm_you on Twitter.</p>
+		</div>
+
+		<div class="displayTopRight"></div>
+
+		<div id="tooltip" class="is-hidden"></div>
+
+		<div class="controlsleft">
+			<span id="getnewvideo" class="quadbutton fa fa-refresh" onclick="retrieveNewVideo()"></span>
+			<span id="autonext" class="quadbutton fa fa-toggle-off" onclick="toggleAutonext()"></span>
+		</div>
+
+		<div class="controlsright">
+			<span id="subtitles-button" class="quadbutton fa fa-commenting-o" onclick="toggleSubs()" style="display:none"></span>
+			<span id="skip-left" class="quadbutton fa fa-arrow-left" onclick="skip(-10)"></span>
+			<span id="skip-right" class="quadbutton fa fa-arrow-right" onclick="skip(10)"></span>
+			<span id="pause-button" class="quadbutton fa fa-play" onclick="playPause()"></span>
+			<span id="fullscreen-button" class="quadbutton fa fa-expand" onclick="toggleFullscreen()"></span>
+		</div>
+	</body>
+</html>

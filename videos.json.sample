@@ -1,0 +1,27 @@
+{
+    "Koopiskeva": {
+        "Euphoria": {
+            "file": "Koop_Euphoria.webm",
+            "song": {
+                "title": "Must Be Dreaming",
+                "artist": "Frou Frou"
+            }
+        },
+        "Momentum": {
+            "file": "Koop_Momentum.webm",
+            "song": {
+                "title": "Mae",
+                "artist": "Awakening"
+            }
+        }
+    },
+    "Nostromo": {
+        "Galaxy Bounce": {
+            "file": "Nostromo_GalaxyBounce.webm",
+            "song": {
+                "title": "Life Light",
+                "artist": "Andy Hunter"
+            }
+        }
+    }
+}
