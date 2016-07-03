@@ -52,6 +52,7 @@ function toggleRegEx(event) {
 }
 
 function search() {
+	if (list == undefined) return;
 	const sVal = document.getElementById("searchbox").value;
 	const query = ( sVal == "" ? location.pathname : "?s=" + sVal );
 	document.getElementById("searchURL").href = query;
