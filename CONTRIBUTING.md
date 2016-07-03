@@ -58,18 +58,18 @@ This is for consistency, nothing else
 
 Wrong:
 
-```php
-if ($something == True)
+```javascript
+if (something == undefined)
 {
-  echo "Yes";
+  return;
 }
 ```
 
 Correct:
 
-```php
-if ($something == True){
-  echo "Yes";
+```javascript
+if (something == undefined){
+  return;
 }
 ```
 

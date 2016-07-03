@@ -26,22 +26,6 @@ function setup() {
 		addVideoButton.title = "Click to add this video to your playlist";
 		addVideoButton.addEventListener("click", playlistAdd);
 		addVideoButton.nextElementSibling.className = "video";
-
-		// Add 'cc' icon after videos that have subtitles.
-		if (addVideoButton.hasAttribute("subtitles")) {
-			var newNode = document.createElement("i");
-				newNode.className = "fa fa-cc";
-				newNode.title = "[" + addVideoButton.getAttribute("subtitles") + "] subtitles are available for this video";
-			addVideoButton.parentNode.insertBefore(newNode, addVideoButton.nextElementSibling.nextElementSibling);
-		}
-
-		// Add 'music' icon after videos that we have song info for.
-		if (addVideoButton.hasAttribute("songtitle")) {
-			var newNode = document.createElement("i");
-				newNode.className = "fa fa-music";
-				newNode.title = "\"" + addVideoButton.getAttribute("songtitle") + "\" by " + addVideoButton.getAttribute("songartist");
-			addVideoButton.parentNode.insertBefore(newNode, addVideoButton.nextElementSibling.nextElementSibling);
-		}
 	}
 
 	// add click events to playlist "menu"
@@ -220,4 +204,52 @@ function loadPlaylist() {
 function startPlaylist() {
 	history.pushState({list: playlist, video: 0}, "Custom Playlist", "/");
 	history.go();
+}
+
+function loadVideoList() {
+	$.getJSON("/videos.json", showResults);
+}
+
+function showResults(videos) {
+	var result = "";
+	var sources = Object.keys(videos);
+	$("#sourcecount")[0].innerHTML = sources.length;
+	var video_count = 0;
+	for (var source_name in videos) {
+		var source = videos[source_name];
+		result += '<div class="source">' + source_name + '<div>\n';
+		for (var video_name in source) {
+			++video_count;
+			var video = source[video_name];
+			var file = video["file"];
+			var song = video["song"];
+			var song_title = undefined;
+			var song_artist = undefined;
+			var subtitles = video["subtitles"];
+			var file_base = file.replace(/\.\w+$/, '');
+			var file_ext = file.replace(file_base, '');
+			result += '<div title="' + video_name + '"><i class="fa fa-plus" fext="' + file_ext + '"';
+			if (song != undefined) {
+				song_title = song["title"];
+				song_artist = song["artist"];
+				result += ' songTitle="' + song_title + '" songArtist="' + song_artist + '"';
+			}
+			if (subtitles != undefined) {
+				result += ' subtitles="' + subtitles + '"';
+			}
+			result += '></i>\n';
+			result += '<a href="../?video=' + file_base + '">' + video_name + '</a>\n';
+			if (subtitles != undefined) {
+				result += '<i class="fa fa-cc" title="[' + subtitles + '"] subtitles are available for this video"></i>\n';
+			}
+			if (song != undefined) {
+				result += '<i class="fa fa-music" title="\"' + song_title + '\" by ' + song_artist + '"></i>\n';
+			}
+			result += '\n<br /></div>\n';
+		}
+		result += '</div></div>\n';
+	}
+	$("#videocount")[0].innerHTML = video_count;
+	$("#results")[0].innerHTML = result;
+	setup();
 }

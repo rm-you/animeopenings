@@ -19,11 +19,29 @@ var OPorED = "all"; // egg, op, ed, all
 var xDown = null, yDown = null; // position of mobile swipe start location
 var mouseIdle, lastMousePos = {"x":0,"y":0};
 var storageSupported = false;
+var initial = true;
 
-function filename() { return document.getElementsByTagName("source")[0].src.split("video/")[1].replace(/\.\w+$/, ""); }
-function fileext() { return document.getElementsByTagName("source")[0].src.split("video/")[1].replace(filename(), ""); }
+function filename() {
+	var type = document.getElementsByTagName("source")[0].type;
+	if (type.length > 0) {
+		var src = document.getElementsByTagName("source")[0].src;
+		return src.split("video/")[1].replace(/\.\w+$/, "");
+	}
+	if ($.urlParam("video") != undefined) {
+		return $.urlParam("video");
+	}
+	return "";
+}
+function fileext() {
+	var type = document.getElementsByTagName("source")[0].type;
+	if (type.length > 0) {
+		var src = document.getElementsByTagName("source")[0].src;
+		return src.split("video/")[1].replace(filename(), "");
+	}
+	return "";
+}
 function title() { return document.getElementById("title").textContent.trim(); }
-function source() { return document.getElementById("source").textContent.trim().slice(5); }
+function source() { return document.getElementById("source").textContent.trim().slice("From ".length); }
 function subtitlePath() { return "subtitles/" + filename() + ".ass"; }
 
 window.onload = function() {
@@ -107,10 +125,12 @@ window.onload = function() {
   document.addEventListener("webkitfullscreenchange", aniopFullscreenChange);
   document.addEventListener("mozfullscreenchange", aniopFullscreenChange);
   document.addEventListener("MSFullscreenChange", aniopFullscreenChange);
+  getVideolist();
 };
 
 window.onpopstate = popHist;
 function popHist() {
+  initial = false;
   if (history.state == "list") history.go();
 
   if (history.state.list == "") {
@@ -170,15 +190,50 @@ function getVideolist() {
   document.getElementById("bgvid").setAttribute("hidden", "");
   tooltip("Loading...", "bottom: 50%; left: 50%; bottom: calc(50% - 16.5px); left: calc(50% - 46.5px); null");
 
-  $.ajaxSetup({async: false});
-  $.getJSON("api/list.php?eggs&shuffle&first=" + filename() + fileext(), function(json) {
-    video_obj = json;
-    vNum = 1;
-  });
-  $.ajaxSetup({async: true});
+  $.getJSON("/videos.json", finishGettingVideoList);
+}
+function finishGettingVideoList(json) {
+  video_obj = [];
+  for (var source_name in json) {
+    var source = json[source_name];
+    for (var video_name in source) {
+      var video = source[video_name];
+      video.source = source_name;
+      video.title = video_name;
+      video_obj.push(video);
+    }
+  }
+  shuffleArray(video_obj);
+  vNum = 1;
 
-  tooltip();
+  //tooltip();
+  if (initial) {
+    initial = false;
+    if ($.urlParam("video") != undefined) {
+      vNum = findVideoByFile($.urlParam("video"));
+      retrieveNewVideo();
+    } else {
+      retrieveNewVideo();
+    }
+  }
   document.getElementById("bgvid").removeAttribute("hidden");
+}
+
+function findVideoByFile(file) {
+  for (var video in video_obj) {
+    if (video_obj[video]["file"].startsWith(file))
+      return video;
+  }
+}
+
+function shuffleArray(array) {
+  for (var i = array.length - 1; i > 0; i--) {
+    var j = Math.floor(Math.random() * (i + 1));
+    var temp = array[i];
+    array[i] = array[j];
+    array[j] = temp;
+  }
+  return array;
 }
 
 function retrieveNewVideo() {
@@ -298,7 +353,7 @@ function playPause() {
   else video.pause();
 
   // Toggle Tooltip
-  tooltip();
+  //tooltip();
   tooltip("pause-button");
 
   // Toggle Play/Pause Icon
@@ -374,6 +429,7 @@ function toggleAutonext() {
 
 // what to do when the video ends
 function onend() {
+  if (initial) return;
   if (autonext || document.title == "Secret~") retrieveNewVideo();
   else document.getElementById("bgvid").play(); // loop
 }
@@ -453,6 +509,9 @@ function tooltip(text, css) {
       if(subsOn()) text = "Click to disable subtitles (S)";
       else text = "Click to enable subtitles (S)";
       css = "right";
+      break;
+    case undefined:
+      return;
   }
 
   const element = document.getElementById("tooltip");
@@ -725,4 +784,10 @@ function removeSubtitles(videoElem) {
     videoElem.subtitles.shutItDown();
     videoElem.subtitles = null;
   }
+}
+
+$.urlParam = function(name){
+  var results = new RegExp('[\?&]' + name + '=([^&#]*)').exec(window.location.href);
+  if (results != undefined) return results[1];
+  else return undefined;
 }
