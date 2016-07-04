@@ -181,7 +181,6 @@ function getVideolist() {
 
 }
 function finishGettingVideoList(json) {
-	console.log(json);
 	video_obj = [];
 	for (var editor_name in json) {
 		var editor = json[editor_name];
