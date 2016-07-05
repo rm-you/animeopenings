@@ -49,7 +49,7 @@ window.onload = function() {
 	// Set/Get history state
 	if (history.state == null) {
 		var state = {file: filename() + fileext(), editor: editor(), title: title()};
-		document.title = state.title + " from " + state.editor;
+		document.title = state.title + " by " + state.editor;
 		if (document.getElementById("song").innerHTML) { // We know the song info
 			var info = document.getElementById("song").innerHTML.replace("Song: \"","").split("\" by ");
 			state.song = {title: info[0], artist: info[1]};
@@ -61,7 +61,8 @@ window.onload = function() {
 
 	try { if ("localStorage" in window && window["localStorage"] !== null) storageSupported = true; } catch(e) { }
 	if (storageSupported) {
-		if (window.localStorage["autonext"] == "true") toggleAutonext();
+		if (window.localStorage["autonext"] == "true" && autonext != true) toggleAutonext();
+		else if (window.localStorage["autonext"] == "false" && autonext != false) toggleAutonext();
 	}
 
 	const video = document.getElementById("bgvid");
@@ -177,13 +178,17 @@ function getVideolist() {
 	document.getElementById("bgvid").setAttribute("hidden", "");
 	//tooltip("Loading...", "bottom: 50%; left: 50%; bottom: calc(50% - 16.5px); left: calc(50% - 46.5px); null");
 
-	$.getJSON("/videos.json", finishGettingVideoList);
+	var fetched_json = "{}";
 
-}
-function finishGettingVideoList(json) {
+	$.ajaxSetup({async: false});
+	$.getJSON("/videos.json", function(json) {
+		fetched_json = json;
+	});
+	$.ajaxSetup({async: true});
+
 	video_obj = [];
-	for (var editor_name in json) {
-		var editor = json[editor_name];
+	for (var editor_name in fetched_json) {
+		var editor = fetched_json[editor_name];
 		for (var video_name in editor) {
 			var video = editor[video_name];
 			video.editor = editor_name;
@@ -192,8 +197,6 @@ function finishGettingVideoList(json) {
 		}
 	}
 	shuffleArray(video_obj);
-	var file = filename() + fileext();
-
 	vNum = 1;
 
 	//tooltip();
@@ -246,11 +249,15 @@ function retrieveNewVideo() {
 	history.pushState({video: vNum, list: video_obj}, document.title, location.origin + location.pathname);
 
 	resetSubtitles();
+	var video = video_obj[vNum];
+	document.title = video.title + " by " + video.editor;
 	document.getElementById("bgvid").play();
 	document.getElementById("pause-button").classList.remove("fa-play");
 	document.getElementById("pause-button").classList.add("fa-pause");
 
 	++vNum;
+
+	if (typeof run_analytics == 'function') run_analytics();
 }
 
 function setVideoElements() {
@@ -400,7 +407,6 @@ function toggleAutonext() {
 // what to do when the video ends
 function onend() {
 	if (initial) return;
-	if (typeof ga == 'function') ga('send', 'pageview');
 	if (autonext) retrieveNewVideo();
 	else document.getElementById("bgvid").play(); // loop
 }

@@ -35,6 +35,7 @@ function setup() {
 
 	// set history state
 	history.replaceState("list", document.title);
+	if (typeof run_analytics == "function") run_analytics();
 }
 
 function toggleRegEx(event) {
