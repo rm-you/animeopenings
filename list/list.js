@@ -6,7 +6,7 @@ var RegExEnabled = false;
 function setup() {
 	// get list of editor elements and set their id
 	list = document.getElementsByClassName("editor");
-	for (let i = 0; i < list.length; ++i)
+	for (var i = 0; i < list.length; ++i)
 		list[i].id = list[i].childNodes[0].nodeValue;
 
 	// set search box toggle RegEx event
@@ -21,8 +21,8 @@ function setup() {
 
 	// add onclick(addVideoToPlaylist) to fa-plus elements
 	const addVideoButtons = document.getElementsByClassName("fa-plus");
-	for (let i = 0; i < addVideoButtons.length; ++i) {
-		let addVideoButton = addVideoButtons[i];
+	for (var i = 0; i < addVideoButtons.length; ++i) {
+		var addVideoButton = addVideoButtons[i];
 		addVideoButton.title = "Click to add this video to your playlist";
 		addVideoButton.addEventListener("click", playlistAdd);
 		addVideoButton.nextElementSibling.className = "video";
@@ -81,9 +81,9 @@ function search() {
 
 	var anyResults = false;
 
-	for (let i = 0; i < list.length; ++i) {
-		let editor = list[i];
-		let j = 0;
+	for (var i = 0; i < list.length; ++i) {
+		var editor = list[i];
+		var j = 0;
 
 		while (j < toFindLength) {
 			// If the RegExp doesn't match
@@ -95,9 +95,9 @@ function search() {
 			++j;
 		}
 
-		let amvs = editor.firstElementChild.children;
-		for (let i = 0; i < amvs.length; ++i) {
-			let h = 0;
+		var amvs = editor.firstElementChild.children;
+		for (var i = 0; i < amvs.length; ++i) {
+			var h = 0;
 			while (h < toFindLength) {
 				// If the RegExp doesn't match
 				if (!toFind[h].test(amvs[i].title)) {
@@ -120,7 +120,7 @@ function search() {
 		// If all RegExp's passed
 		if (j == toFindLength) {
 			editor.removeAttribute("hidden");
-			for (let i = 0; i < amvs.length; i++) {
+			for (var i = 0; i < amvs.length; i++) {
 				amvs[i].removeAttribute("hidden");
 			}
 			anyResults = true;
@@ -203,11 +203,11 @@ function loadPlaylist() {
 	while (X.length) X[0].click();
 
 	var sources = document.getElementById("box").children[1].value.split("\n");
-	for (let source of sources) {
+	for (var source of sources) {
 		source = source.trim();
 
-		let j = 0;
-		let videos = document.getElementsByClassName("video");
+		var j = 0;
+		var videos = document.getElementsByClassName("video");
 		while (j < videos.length) {
 			if (videos[j].getAttribute("href") == "../?video=" + source ) {
 				videos[j].previousElementSibling.click();
@@ -218,7 +218,7 @@ function loadPlaylist() {
 		}
 
 		if (j == videos.length) {
-			let notFound = document.createElement("p");
+			var notFound = document.createElement("p");
 				notFound.innerHTML = '<i class="fa fa-remove" style="padding-left: 0;"></i>"' + source + '" could not be found.';
 				notFound.children[0].addEventListener("click", function(){this.parentNode.remove();});
 			playlistBot.parentElement.appendChild(notFound);
@@ -238,8 +238,6 @@ function loadVideoList() {
 }
 
 function showResults(videos) {
-	//var editors = Object.keys(videos);
-	//for (let i = 0; i < editors.length; ++i) {
 	var result = "";
 	var editors = Object.keys(videos);
 	$("#editorcount")[0].innerHTML = editors.length;

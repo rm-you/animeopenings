@@ -395,7 +395,7 @@ function subtitleRenderer(SC, video, subFile) {
 		// This function converts an ASS style path to a SVG style path.
 
 		// scale path
-		path = path.replace(/\d+/g, M => scale * parseFloat(M));
+		path = path.replace(/\d+/g, function (M) { return scale * parseFloat(M); });
 
 		path = path.toLowerCase();
 		path = path.replace(/b/g,"C");	// cubic bezier curve to point 3 using point 1 and 2 as the control points
@@ -858,19 +858,19 @@ function subtitleRenderer(SC, video, subFile) {
 			var origin = _this.tOrg || (divX + "px " + divY + "px");
 
 			if (BR.length) {
-				let A = parseInt(TS.Alignment,10);
-				let xVal;
+				var A = parseInt(TS.Alignment,10);
+				var xVal;
 
 				if (TS.position.x) xVal = TS.position.x;
 				else {
-					let W = parseFloat(getComputedStyle(SC).width);
+					var W = parseFloat(getComputedStyle(SC).width);
 					if (A%3 == 0) xVal = W-MarginR;
 					else if ((A+1)%3 == 0) xVal = ((MarginR-MarginL)/2)+(W/2);
 					else xVal = MarginL;
 				}
 
 				TD.firstChild.setAttribute("x",xVal);
-				for (let B of BR) {
+				for (var B of BR) {
 					B.setAttribute("x",xVal);
 					B.setAttribute("dy","1em");
 				}
@@ -884,7 +884,7 @@ function subtitleRenderer(SC, video, subFile) {
 			if (_this.box) _this.box.style["transform"] = transforms;
 			if (_this.box) _this.box.style["transform-origin"] = origin;
 			if (_this.paths) {
-				let BBox, X, Y;
+				var BBox, X, Y;
 				try {BBox = _this.div.getBBox();}catch(e){;}
 
 				if (BBox && (BBox.x || BBox.y)) {
@@ -895,10 +895,10 @@ function subtitleRenderer(SC, video, subFile) {
 					Y = TS.position.y;
 				}
 
-				let A = TS.Alignment;
-				for (let path of _this.paths) {
-					let pBounds = path.getBBox();
-					let px = X, py = Y;
+				var A = TS.Alignment;
+				for (var path of _this.paths) {
+					var pBounds = path.getBBox();
+					var px = X, py = Y;
 
 					if (A%3 == 0) px -= 2 * pBounds.width; // 3, 6, 9
 					else if ((A+1)%3 == 0) px -= pBounds.width; // 2, 5, 8
