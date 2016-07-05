@@ -400,7 +400,8 @@ function toggleAutonext() {
 // what to do when the video ends
 function onend() {
 	if (initial) return;
-	if (autonext || document.title == "Secret~") retrieveNewVideo();
+	if (typeof ga == 'function') ga('send', 'pageview');
+	if (autonext) retrieveNewVideo();
 	else document.getElementById("bgvid").play(); // loop
 }
 
