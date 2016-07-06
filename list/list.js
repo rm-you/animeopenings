@@ -238,45 +238,64 @@ function loadVideoList() {
 }
 
 function showResults(videos) {
-	var result = "";
 	var editors = Object.keys(videos);
 	$("#editorcount")[0].innerHTML = editors.length;
+	var result_div = $("#results")[0];
 	var video_count = 0;
 	for (var editor_name in videos) {
 		var editor = videos[editor_name];
-		result += '<div class="editor">' + editor_name + '<div>\n';
+		var editor_div = document.createElement("div");
+		editor_div.classList.add("editor");
+		editor_div.innerHTML = editor_name;
+		var videos_div = document.createElement("div");
 		for (var video_name in editor) {
 			++video_count;
 			var video = editor[video_name];
 			var file = video["file"];
 			var song = video["song"];
-			var song_title = undefined;
-			var song_artist = undefined;
 			var subtitles = video["subtitles"];
 			var file_base = file.replace(/\.\w+$/, '');
 			var file_ext = file.replace(file_base, '');
-			result += '<div title="' + video_name + '"><i class="fa fa-plus" fext="' + file_ext + '"';
-			if (song != undefined) {
-				song_title = song["title"];
-				song_artist = song["artist"];
-				result += ' songTitle="' + song_title + '" songArtist="' + song_artist + '"';
-			}
+
+			var video_div = document.createElement("div");
+			video_div.title = video_name;
+			var video_i = document.createElement("i");
+			video_i.classList.add("fa", "fa-plus");
+			video_i.setAttribute("fext", file_ext);
+			video_i.title = "Click to add this video to your playlist"
+			var video_a = document.createElement("a");
+			video_a.classList.add("video");
+			video_a.href = "../?video=" + file_base;
+			video_a.innerHTML = video_name;
+			video_div.appendChild(video_i);
+			video_div.appendChild(video_a);
+
 			if (subtitles != undefined) {
-				result += ' subtitles="' + subtitles + '"';
-			}
-			result += '></i>\n';
-			result += '<a href="../?video=' + file_base + '">' + video_name + '</a>\n';
-			if (subtitles != undefined) {
-				result += '<i class="fa fa-cc" title="[' + subtitles + '] subtitles are available for this video"></i>\n';
+				video_i.setAttribute("subtitles", subtitles);
+
+				var subtitle_i = document.createElement("i");
+				subtitle_i.classList.add("fa", "fa-cc");
+				subtitle_i.title = "[" + subtitles + "] subtitles are available for this video";
+				video_div.appendChild(subtitle_i);
 			}
 			if (song != undefined) {
-				result += '<i class="fa fa-music" title="\'' + song_title + '\' by ' + song_artist + '"></i>\n';
+				var song_title = song["title"];
+				var song_artist = song["artist"];
+				video_i.setAttribute("songTitle", song_title);
+				video_i.setAttribute("songArtist", song_artist);
+
+				var song_i = document.createElement("i");
+				song_i.classList.add("fa", "fa-music");
+				song_i.title = "'" + song_title + "' by " + song_artist;
+				video_div.appendChild(song_i);
 			}
-			result += '\n<br /></div>\n';
+			var video_br = document.createElement("br");
+			video_div.appendChild(video_br);
+			videos_div.appendChild(video_div);
 		}
-		result += '</div></div>\n';
+		editor_div.appendChild(videos_div);
+		result_div.appendChild(editor_div);
 	}
 	$("#videocount")[0].innerHTML = video_count;
-	$("#results")[0].innerHTML = result;
 	setup();
 }
