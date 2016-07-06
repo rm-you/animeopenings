@@ -19,7 +19,9 @@ var storageSupported = false;
 var initial = true;
 
 function filename() {
-	var type = document.getElementsByTagName("source")[0].type;
+	var source = document.getElementsByTagName("source")
+	if (source.length === 0) return "";
+	var type = source[0].type;
 	if (type.length > 0) {
 		var src = document.getElementsByTagName("source")[0].src;
 		return src.split("video/")[1].replace(/\.\w+$/, "");
@@ -30,7 +32,9 @@ function filename() {
 	return "";
 }
 function fileext() {
-	var type = document.getElementsByTagName("source")[0].type;
+	var source = document.getElementsByTagName("source")
+	if (source.length === 0) return "";
+	var type = source[0].type;
 	if (type.length > 0) {
 		var src = document.getElementsByTagName("source")[0].src;
 		return src.split("video/")[1].replace(filename(), "");
@@ -43,6 +47,7 @@ function subtitlePath() { return "subtitles/" + filename() + ".ass"; }
 function isTouchDevice() { return (('ontouchstart' in window) || (navigator.MaxTouchPoints > 0) || (navigator.msMaxTouchPoints > 0)); }
 
 window.onload = function() {
+	if (history.state != null && history.state.playlist != true) getVideolist();
 	// Fix menu button. It is set in HTML to be a link to the FAQ page for anyone who has disabled JavaScript.
 	document.getElementById("menubutton").outerHTML = '<span id="menubutton" class="quadbutton fa fa-bars" onclick="showMenu()"></span>';
 
@@ -116,7 +121,6 @@ window.onload = function() {
 	document.addEventListener("webkitfullscreenchange", aniopFullscreenChange);
 	document.addEventListener("mozfullscreenchange", aniopFullscreenChange);
 	document.addEventListener("MSFullscreenChange", aniopFullscreenChange);
-	getVideolist();
 };
 
 window.onpopstate = popHist;
