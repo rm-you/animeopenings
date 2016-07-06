@@ -11,6 +11,10 @@ a:hover, .fa-plus:hover, .fa-remove:hover {
 	color: #E58B00;
 }
 
+a.video {
+	padding-right: 4px;
+}
+
 main {
 	max-width: 640px;
 	margin-left: auto;
