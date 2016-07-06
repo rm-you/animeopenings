@@ -96,12 +96,12 @@ function search() {
 		}
 
 		var amvs = editor.firstElementChild.children;
-		for (var i = 0; i < amvs.length; ++i) {
+		for (var k = 0; k < amvs.length; ++k) {
 			var h = 0;
 			while (h < toFindLength) {
 				// If the RegExp doesn't match
-				if (!toFind[h].test(amvs[i].title)) {
-					amvs[i].setAttribute("hidden", "");
+				if (!toFind[h].test(amvs[k].title)) {
+					amvs[k].setAttribute("hidden", "");
 					break;
 				}
 
@@ -110,7 +110,7 @@ function search() {
 
 			// If all RegExp's passed
 			if (h == toFindLength) {
-				amvs[i].removeAttribute("hidden");
+				amvs[k].removeAttribute("hidden");
 				editor.removeAttribute("hidden");
 				anyResults = true;
 			}
@@ -120,8 +120,8 @@ function search() {
 		// If all RegExp's passed
 		if (j == toFindLength) {
 			editor.removeAttribute("hidden");
-			for (var i = 0; i < amvs.length; i++) {
-				amvs[i].removeAttribute("hidden");
+			for (var m = 0; m < amvs.length; m++) {
+				amvs[m].removeAttribute("hidden");
 			}
 			anyResults = true;
 		}
