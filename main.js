@@ -178,13 +178,10 @@ function getVideolist() {
 	document.getElementById("bgvid").setAttribute("hidden", "");
 	//tooltip("Loading...", "bottom: 50%; left: 50%; bottom: calc(50% - 16.5px); left: calc(50% - 46.5px); null");
 
-	var fetched_json = "{}";
+	$.getJSON("/videos.json", finishGettingVideolist);
+}
 
-	$.ajaxSetup({async: false});
-	$.getJSON("/videos.json", function(json) {
-		fetched_json = json;
-	});
-	$.ajaxSetup({async: true});
+function finishGettingVideolist(fetched_json) {
 
 	video_obj = [];
 	for (var editor_name in fetched_json) {
@@ -280,8 +277,19 @@ function setVideoElements() {
 
 	const video = video_obj[vNum];
 
-	document.getElementsByTagName("source")[0].src = "video/" + video.file;
-	document.getElementsByTagName("source")[0].type = "video/" + videoMIMEsubtype(video.file);
+	var source_element = document.getElementsByTagName("source");
+	if (source_element.length === 0) {
+		var video_element = document.getElementsByTagName("video")[0];
+		source_element = document.createElement("source");
+		source_element.src = "video/" + video.file;
+		source_element.type = "video/" + videoMIMEsubtype(video.file);
+		video_element.appendChild(source_element);
+	} else {
+		source_element = source_element[0];
+	}
+
+	source_element.src = "video/" + video.file;
+	source_element.type = "video/" + videoMIMEsubtype(video.file);
 	document.getElementById("bgvid").load();
 	document.getElementById("subtitle-attribution").innerHTML = (video.subtitles ? "[" + video.subtitles + "]" : "");
 	document.title = video.title + " by " + video.editor;
