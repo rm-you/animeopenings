@@ -41,12 +41,12 @@ function setup() {
 function toggleRegEx(event) {
 	if (event.keyCode == 9) {
 		RegExEnabled = !RegExEnabled;
-		
+
 		if (RegExEnabled)
 			document.getElementById("regex").children[0].innerHTML = "(press tab while typing to disable RegEx in search)";
 		else
 			document.getElementById("regex").children[0].innerHTML = "(press tab while typing to enable RegEx in search)";
-		
+
 		if (event.preventDefault) event.preventDefault();
 		return false;
 	}
@@ -58,7 +58,7 @@ function search() {
 	const query = ( sVal == "" ? location.pathname : "?s=" + sVal );
 	document.getElementById("searchURL").href = query;
 	history.replaceState("list", document.title, query);
-	
+
 	var UseRegEx = RegExEnabled;
 	var toFind, toFindLength;
 
@@ -69,12 +69,12 @@ function search() {
 			toFindLength = 1;
 		} catch (e) { UseRegEx = false; }
 	}
-	
+
 	if (!UseRegEx) {
 		toFind = sVal.split(" ");
 		if (toFind.indexOf("") > -1) toFind.splice(toFind.indexOf(""), 1);
 		toFindLength = toFind.length;
-		
+
 		for (var i = 0; i < toFindLength; ++i)
 			toFind[i] = new RegExp(toFind[i].replace(/[-\/\\^$*+?.()|[\]{}]/g, "\\$&"), "i");
 	}
@@ -91,7 +91,7 @@ function search() {
 				editor.setAttribute("hidden", "");
 				break;
 			}
-			
+
 			++j;
 		}
 
@@ -133,8 +133,8 @@ function search() {
 
 function playlistAdd() {
 	var video = {title: this.nextElementSibling.text,
-				 source: this.parentElement.parentElement.parentElement.childNodes[0].nodeValue,
-				 file: this.nextElementSibling.href.substring(this.nextElementSibling.href.indexOf("=")+1) + this.getAttribute("fext")};
+		source: this.parentElement.parentElement.parentElement.childNodes[0].nodeValue,
+		file: this.nextElementSibling.href.substring(this.nextElementSibling.href.indexOf("=")+1) + this.getAttribute("fext")};
 	if (this.hasAttribute("songTitle")) video.song = { title: this.getAttribute("songTitle"), artist: this.getAttribute("songArtist") };
 	if (this.hasAttribute("subtitles")) video.subtitles = this.getAttribute("subtitles");
 
@@ -146,11 +146,11 @@ function playlistAdd() {
 	this.title = "This video is in your playlist";
 
 	var XNode = document.createElement("i");
-		XNode.classList.add("fa", "fa-remove");
-		XNode.addEventListener("click", playlistRemove);
-		XNode.source = this;
+	XNode.classList.add("fa", "fa-remove");
+	XNode.addEventListener("click", playlistRemove);
+	XNode.source = this;
 	var TNode = document.createElement("span");
-		TNode.innerHTML = '<span>' + video.title + " by " + video.source + "</span>";
+	TNode.innerHTML = '<span>' + video.title + " by " + video.source + "</span>";
 	var BNode = document.createElement("br");
 	playlistBot.parentNode.insertBefore(XNode, playlistBot);
 	playlistBot.parentNode.insertBefore(TNode, playlistBot);
@@ -182,10 +182,10 @@ function playlistRemove() {
 
 function editPlaylist() {
 	var box = document.createElement("div");
-		box.id = "box";
-		box.innerHTML = "<p><span>Cancel</span><span>Save</span></p><textarea></textarea>";
-		box.children[0].children[0].addEventListener("click", cancelEdit);
-		box.children[0].children[1].addEventListener("click", loadPlaylist);
+	box.id = "box";
+	box.innerHTML = "<p><span>Cancel</span><span>Save</span></p><textarea></textarea>";
+	box.children[0].children[0].addEventListener("click", cancelEdit);
+	box.children[0].children[1].addEventListener("click", loadPlaylist);
 
 	if (playlist.length) box.children[1].value = playlist[0].file.replace(/\.\w+$/, "");
 	for (var i = 1; i < playlist.length; ++i)
@@ -219,8 +219,8 @@ function loadPlaylist() {
 
 		if (j == videos.length) {
 			var notFound = document.createElement("p");
-				notFound.innerHTML = '<i class="fa fa-remove" style="padding-left: 0;"></i>"' + source + '" could not be found.';
-				notFound.children[0].addEventListener("click", function(){this.parentNode.remove();});
+			notFound.innerHTML = '<i class="fa fa-remove" style="padding-left: 0;"></i>"' + source + '" could not be found.';
+			notFound.children[0].addEventListener("click", function(){this.parentNode.remove();});
 			playlistBot.parentElement.appendChild(notFound);
 		}
 	}
