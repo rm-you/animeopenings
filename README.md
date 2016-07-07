@@ -26,7 +26,7 @@ Optional:
 
 AMVs.moe has a lot of features. I'll list the main features here:
 
-* Play ramdom videos from a folder
+* Play random videos from a folder
 * No server-side processing
 * Minimalistic video player (It also looks/works great as an iframe as-is)
 * Simple (but messy) metadata structure
