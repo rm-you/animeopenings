@@ -10,7 +10,6 @@
    */
 
 // Global Variables
-var keylog = [];
 var vNum = 0, video_obj = [];
 var autonext = true;
 var xDown = null, yDown = null; // position of mobile swipe start location
@@ -18,62 +17,64 @@ var mouseIdle, lastMousePos = {"x":0,"y":0};
 var storageSupported = false;
 var initial = true;
 
-function filename() {
-	var source = document.getElementsByTagName("source")
-	if (source.length === 0) return "";
-	var type = source[0].type;
-	if (type.length > 0) {
-		var src = document.getElementsByTagName("source")[0].src;
-		return src.split("video/")[1].replace(/\.\w+$/, "");
-	}
-	if ($.urlParam("video") != undefined) {
-		return $.urlParam("video");
-	}
-	return "";
+function empty(thing) {
+	if (typeof thing == "object" && thing.length > 0) return false;
+	return true;
 }
-function fileext() {
-	var source = document.getElementsByTagName("source")
-	if (source.length === 0) return "";
-	var type = source[0].type;
-	if (type.length > 0) {
-		var src = document.getElementsByTagName("source")[0].src;
-		return src.split("video/")[1].replace(filename(), "");
-	}
-	return "";
+
+function getCurrentVideo() {
+	return video_obj[vNum];
 }
-function title() { return document.getElementById("title").textContent.trim(); }
-function editor() { return document.getElementById("editor").textContent.trim().slice("Editor: ".length); }
-function subtitlePath() { return "subtitles/" + filename() + ".ass"; }
+
+function basename() { return getCurrentVideo().file.replace(/\.\w+$/, ""); }
+function title() { return getCurrentVideo().title; }
+function editor() { return getCurrentVideo().editor; }
+function subtitlePath() { return "subtitles/" + basename() + ".ass"; }
 function isTouchDevice() { return (('ontouchstart' in window) || (navigator.MaxTouchPoints > 0) || (navigator.msMaxTouchPoints > 0)); }
 
 window.onload = function() {
-	if (history.state != null && history.state.playlist != true) getVideolist();
+	var video_name_passed = $.urlParam("video");
+	var playlist_passed = history.state && history.state.playlist == true;
+	var history_exists = history.state && !empty(history.state.list);
+
+	var site_state;
+	if (video_name_passed) site_state = "video_link";
+	else if (playlist_passed) site_state = "playlist";
+	else if (history_exists && !playlist_passed) site_state = "return_visit"; // redundant but READABLE check on playlist_passed
+	else site_state = "new_visit";
+	console.log("Site state: " + site_state);
+
+	switch (site_state) {
+		// If this is a new visitor, need to get a video list and autoplay
+		case "new_visit":
+		// Same thing for a link
+		case "video_link":
+			getVideolist();
+			break;
+		// For a playlist, we need to get the list from history
+		case "playlist":
+			console.log("Playlist found:");
+			console.log("\t" + getPlaylistVideoStrings());
+			popHist();
+			break;
+		// For a return visit, we need to get the last video from history
+		case "return_visit":
+			console.log("Returning to the site, left off with:")
+			console.log("\t" + getCurrentVideoString());
+			popHist();
+			break;
+	}
+
+	const video = document.getElementById("bgvid");
+
 	// Fix menu button. It is set in HTML to be a link to the FAQ page for anyone who has disabled JavaScript.
 	document.getElementById("menubutton").outerHTML = '<span id="menubutton" class="quadbutton fa fa-bars" onclick="showMenu()"></span>';
-
-	// Set/Get history state
-	if (history.state == null) {
-		var state = {file: filename() + fileext(), editor: editor(), title: title()};
-		document.title = state.title + " by " + state.editor;
-		if (document.getElementById("song").innerHTML) { // We know the song info
-			var info = document.getElementById("song").innerHTML.replace("Song: \"","").split("\" by ");
-			state.song = {title: info[0], artist: info[1]};
-		}
-		if ($("#subtitles-button").is(":visible")) // Subtitles are available
-			state.subtitles = getSubtitleAttribution().slice(1,-1);
-		history.replaceState({video: [state], list: []}, document.title, location.origin + location.pathname + (location.search ? "?video=" + filename() : ""));
-	} else popHist();
 
 	try { if ("localStorage" in window && window["localStorage"] !== null) storageSupported = true; } catch(e) { }
 	if (storageSupported) {
 		if (window.localStorage["autonext"] == "true" && autonext != true) toggleAutonext();
 		else if (window.localStorage["autonext"] == "false" && autonext != false) toggleAutonext();
 	}
-
-	const video = document.getElementById("bgvid");
-
-	// autoplay
-	if (video.paused) playPause();
 
 	// Pause/Play video on click event listener
 	video.addEventListener("click", playPause);
@@ -123,10 +124,32 @@ window.onload = function() {
 	document.addEventListener("MSFullscreenChange", aniopFullscreenChange);
 };
 
+function getPlaylistVideoStrings() {
+	var playlist = history.state.list;
+	var video_strings = [];
+	for (var item in playlist) {
+		var video = playlist[item];
+		video_strings.push(buildVideoString(video));
+	}
+	return video_strings;
+}
+
+function getCurrentVideoString() {
+	var video = history.state.list[history.state.video];
+	return buildVideoString(video);
+}
+
+function buildVideoString(video) {
+	return "'" + video.title + "' by " + video.editor;
+}
+
 window.onpopstate = popHist;
 function popHist() {
+	console.log("Popping history")
 	initial = false;
-	if (history.state == "list") history.go();
+	if (history.state == "list") {
+		history.go();
+	}
 
 	if (history.state.list == "") {
 		vNum = 0;
@@ -137,6 +160,7 @@ function popHist() {
 	}
 	setVideoElements();
 	resetSubtitles();
+	toggleSubs();
 	playPause();
 	++vNum;
 }
@@ -203,7 +227,7 @@ function finishGettingVideolist(fetched_json) {
 	//tooltip();
 	if (initial) {
 		initial = false;
-		if ($.urlParam("video") != undefined) {
+		if ($.urlParam("video")) {
 			vNum = findVideoByFile($.urlParam("video"));
 			retrieveNewVideo();
 		} else {
@@ -250,8 +274,11 @@ function retrieveNewVideo() {
 	history.pushState({video: vNum, list: video_obj}, document.title, location.origin + location.pathname);
 
 	resetSubtitles();
+	toggleSubs();
 	var video = video_obj[vNum];
 	document.title = video.title + " by " + video.editor;
+	console.log("--> Playing from retrieveNewVideo:");
+	console.log("\t" + getCurrentVideoString());
 	document.getElementById("bgvid").play();
 	document.getElementById("pause-button").classList.remove("fa-play");
 	document.getElementById("pause-button").classList.add("fa-pause");
@@ -306,7 +333,7 @@ function setVideoElements() {
 
 
 	var song = "";
-	if (video.song != undefined) {
+	if (video.song) {
 		song = "Song: &quot;" + video.song.title + "&quot; by " + video.song.artist;
 	}
 	document.getElementById("song").innerHTML = song;
@@ -337,7 +364,12 @@ function toggleMenu() {
 
 // Play/Pause Button
 function playPause() {
+	if (arguments.callee.caller)
+		console.log("Called playPause: " + arguments.callee.caller.name);
+	else if (!empty(arguments) && typeof arguments[0] == 'object')
+		console.log("Triggered playPause: " + arguments[0].constructor.name)
 	const video = document.getElementById("bgvid");
+	console.log("--> " + (video.paused ? "Playing":"Pausing") + " from playPause")
 	if (video.paused) video.play();
 	else video.pause();
 
@@ -418,9 +450,11 @@ function toggleAutonext() {
 
 // what to do when the video ends
 function onend() {
-	if (initial) return;
 	if (autonext) retrieveNewVideo();
-	else document.getElementById("bgvid").play(); // loop
+	else {
+		console.log("--> Playing from onend")
+		document.getElementById("bgvid").play(); // loop
+	}
 }
 
 // Overused tooltip code
@@ -468,6 +502,7 @@ function tooltip(text, css) {
 			if(subsOn()) text = "Click to disable subtitles (S)";
 			else text = "Click to enable subtitles (S)";
 			css = "right";
+			break;
 		case undefined:
 			return;
 	}
@@ -613,8 +648,7 @@ function getSubtitleAttribution() {
 	return document.getElementById("subtitle-attribution").textContent;
 }
 function subsAvailable() {
-	const HS = history.state;
-	return Boolean((HS.video[0] && HS.video[0].subtitles) || (HS.list[HS.video] && HS.list[HS.video].subtitles));
+	return Boolean(getCurrentVideo().subtitles)
 }
 function subsOn() {
 	return Boolean(document.getElementById("bgvid").subtitles);
@@ -661,6 +695,6 @@ function removeSubtitles(videoElem) {
 
 $.urlParam = function(name){
 	var results = new RegExp('[\?&]' + name + '=([^&#]*)').exec(window.location.href);
-	if (results != undefined) return results[1];
+	if (results) return results[1];
 	else return undefined;
 }
