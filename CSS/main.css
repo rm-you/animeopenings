@@ -134,6 +134,23 @@ video {
   overflow: auto;
 }
 
+#chromecast {
+  position: fixed;
+  top: 20px;
+  right: 10px;
+  width: 30px;
+  height: 30px;
+  max-width: 30px;
+  padding: 15px 5px 15px 10px;
+  background-image: url("cast.png");
+  background-size: 28px 28px;
+  background-repeat: no-repeat;
+}
+
+.casting {
+  background-image: url("cast_enabled.png") !important;
+}
+
 #title, #source, #song, #subs {
   color: #555;
 }
