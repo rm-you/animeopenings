@@ -151,6 +151,14 @@ video {
   background-image: url("cast_enabled.png") !important;
 }
 
+#cast_blocker {
+  display: none;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
 #title, #source, #song, #subs {
   color: #555;
 }

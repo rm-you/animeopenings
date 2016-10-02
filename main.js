@@ -16,6 +16,7 @@ var xDown = null, yDown = null; // position of mobile swipe start location
 var mouseIdle, lastMousePos = {"x":0,"y":0};
 var storageSupported = false;
 var initial = true;
+var block_cast_sync = false;
 
 function empty(thing) {
     if (typeof thing == "object" && thing.length > 0) return false;
@@ -23,7 +24,7 @@ function empty(thing) {
 }
 
 function getCurrentVideo() {
-    return video_obj[vNum];
+    return video_obj[vNum - 1];
 }
 
 function basename() { return getCurrentVideo().file.replace(/\.\w+$/, ""); }
@@ -47,8 +48,10 @@ window.onload = function() {
     switch (site_state) {
         // If this is a new visitor, need to get a video list and autoplay
         case "new_visit":
-            // Same thing for a link
+            getVideolist();
+            break;
         case "video_link":
+            block_cast_sync = true;
             getVideolist();
             break;
             // For a playlist, we need to get the list from history
@@ -93,7 +96,6 @@ window.onload = function() {
     $(document).on("click", "#progressbar", function(e) {
             const percentage = e.pageX / $(document).width();
             skip((video.duration * percentage) - video.currentTime);
-            if (castEnabled) castSeek();
             });
 
     // Mobile swipe event listeners
@@ -161,10 +163,10 @@ function popHist() {
         video_obj = history.state.list;
     }
     setVideoElements();
-    resetSubtitles();
-    toggleSubs();
-    playPause();
     ++vNum;
+    resetSubtitles();
+    if (!subsOn()) toggleSubs();
+    playPause();
 }
 
 // Hide mouse, progress bar, and controls if mouse has not moved for 3 seconds
@@ -258,7 +260,13 @@ function shuffleArray(array) {
     return array;
 }
 
-function retrieveNewVideo() {
+function retrieveNewVideo(from) {
+    if (from == "sync" && block_cast_sync) {
+        block_cast_sync = false;
+        console.log("Loading media, vNum="+vNum+"; video=" + getCurrentVideoString())
+        myCastPlayer.loadMedia();
+        return;
+    }
     if (video_obj.length <= 1) getVideolist();
 
     // just in case
@@ -277,40 +285,47 @@ function retrieveNewVideo() {
 
     history.pushState({video: vNum, list: video_obj}, document.title, location.origin + location.pathname);
 
-    resetSubtitles();
-    toggleSubs();
     var video = video_obj[vNum];
     document.title = video.title + " by " + video.editor;
+
     console.log("--> Playing from retrieveNewVideo:");
     console.log("\t" + getCurrentVideoString());
-    document.getElementById("bgvid").play();
-    document.getElementById("pause-button").classList.remove("fa-play");
-    document.getElementById("pause-button").classList.add("fa-pause");
-
     ++vNum;
+    if (from != "sync" && from != "idle_next") {
+        playPause("play");
+    }
+    if (typeof(myCastPlayer) != "undefined" && myCastPlayer.session && from != "sync") {
+        console.log("Loading media, vNum="+vNum+"; video=" + getCurrentVideoString())
+        if (from == "button") {
+            myCastPlayer.manual_stop = true;
+        }
+        myCastPlayer.loadMedia();
+    }
+
+    resetSubtitles();
+    if (!subsOn()) toggleSubs();
 
     if (typeof run_analytics == 'function') run_analytics();
-    if (typeof castVideo == 'function') castVideo();
+}
+
+function videoMIMEsubtype(filename) {
+    filename = filename.replace(filename.replace(/\.\w+$/, ""), "");
+    switch (filename) {
+        case ".mp4":
+        case ".m4v":
+            return "mp4";
+        case ".ogg":
+        case ".ogm":
+        case ".ogv":
+            return "ogg";
+        case ".webm":
+            return "webm";
+        default:
+            return "*";
+    }
 }
 
 function setVideoElements() {
-    function videoMIMEsubtype(filename) {
-        filename = filename.replace(filename.replace(/\.\w+$/, ""), "");
-        switch (filename) {
-            case ".mp4":
-            case ".m4v":
-                return "mp4";
-            case ".ogg":
-            case ".ogm":
-            case ".ogv":
-                return "ogg";
-            case ".webm":
-                return "webm";
-            default:
-                return "*";
-        }
-    }
-
     const video = video_obj[vNum];
 
     var source_element = document.getElementsByTagName("source");
@@ -373,6 +388,9 @@ function playPause(force) {
         console.log("Called playPause: " + arguments.callee.caller.name);
     else if (!empty(arguments) && typeof arguments[0] == 'object')
         console.log("Triggered playPause: " + arguments[0].constructor.name);
+    else {
+        console.log("Somehow playPause was called!?");
+    }
     if (force instanceof MouseEvent) force = undefined;
 
     const video = $("#bgvid")[0];
@@ -381,9 +399,11 @@ function playPause(force) {
     else if (video.paused) action = "play";
     else action = "pause";
 
-    if (typeof(castEnabled) != "undefined" && castEnabled && force == undefined) {
-        console.log("--> Passing to castPlayPause()");
-        castPlayPause();
+    if (typeof(myCastPlayer) != "undefined" && myCastPlayer.casting() && force == undefined) {
+        console.log("--> Ensuring locally paused, passing to castPlayPause()");
+        video.pause();
+        mediaStatePlaying(false);
+        myCastPlayer.castPlayPause();
     } else if (action == "play") {
         console.log("--> Playing from playPause");
         video.play();
@@ -401,12 +421,17 @@ function playPause(force) {
 }
 
 function mediaStatePlaying(state) {
+    const video = $("#bgvid")[0];
     if (state) { // Playing!
         // Toggle Play/Pause Icon
         $("#pause-button").removeClass("fa-play").addClass("fa-pause");
+        if (typeof(myCastPlayer) != "undefined")
+            myCastPlayer.localPlayerState = video.paused ? PLAYER_STATE.STOPPED : PLAYER_STATE.PLAYING;
     } else { // Paused!
         // Toggle Play/Pause Icon
         $("#pause-button").addClass("fa-play").removeClass("fa-pause");
+        if (typeof(myCastPlayer) != "undefined")
+            myCastPlayer.localPlayerState = video.paused ? PLAYER_STATE.STOPPED : PLAYER_STATE.PLAYING;
     }
 }
 
@@ -416,6 +441,9 @@ function skip(value) {
     // position in time the value given by the function parameters.
     const video = document.getElementById("bgvid");
     video.currentTime += value;
+    if (typeof(myCastPlayer) != "undefined") {
+        myCastPlayer.seekMedia(video.currentTime);
+    }
 
     // Calculates the current time in minutes and seconds.
     const minutes = Math.floor(video.currentTime / 60);
@@ -479,7 +507,11 @@ function toggleAutonext() {
 
 // what to do when the video ends
 function onend() {
-    if (autonext) retrieveNewVideo();
+    var abort = false;
+    if (typeof(myCastPlayer) != "undefined" && myCastPlayer.deviceState == DEVICE_STATE.ACTIVE) {
+        abort = true;
+    }
+    if (autonext && !abort) retrieveNewVideo();
     else {
         console.log("--> Playing from onend")
             document.getElementById("bgvid").play(); // loop
@@ -613,8 +645,8 @@ function changeVolume(amount) {
 
     displayTopRight(percent + "%");
 
-    if (typeof(setCastVolume) != "undefined") {
-        setCastVolume(video.volume);
+    if (typeof(myCastPlayer) != "undefined") {
+        myCastPlayer.setReceiverVolume(false);
     }
 }
 
@@ -710,7 +742,7 @@ function toggleSubs() {
         } else {
             $("#subtitles-button").addClass("fa-commenting").removeClass("fa-commenting-o");
             var temp = document.getElementById("wrapper").children;
-            initializeSubtitles(temp[0], temp[1], subtitlePath());
+            initializeSubtitles(temp[0], temp[2], subtitlePath());
             displayTopRight("Enabled Subtitles by " + getSubtitleAttribution(), 3000);
         }
     }
@@ -720,7 +752,7 @@ function initializeSubtitles(subContainer, videoElem, subFile) {
     videoElem.subtitles = new subtitleRenderer(subContainer, videoElem, subFile);
 }
 function removeSubtitles(videoElem) {
-    if(subsOn() && videoElem.subtitles.shutItDown) {
+    if(subsOn() && videoElem.subtitles && videoElem.subtitles.shutItDown) {
         videoElem.subtitles.shutItDown();
         videoElem.subtitles = null;
     }

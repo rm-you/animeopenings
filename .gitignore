@@ -15,6 +15,7 @@ videos.json
 backend/includes/botnet.html
 *.webm
 subtitles/*.ass
+subtitles/*.vtt
 assets/fonts/*
 CSS/fonts.css
 tocopy/*

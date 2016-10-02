@@ -24,7 +24,6 @@
 		<script src="https://code.jquery.com/jquery-2.1.3.min.js"></script>
 		<script src="https://www.gstatic.com/cv/js/sender/v1/cast_sender.js"></script>
 		<script src="main.js"></script>
-		<script src="chromecast.js"></script>
 		<script src="analytics.js"></script>
 		<script async src="subtitles/code/fitCurves.js"></script>
 		<script async src="subtitles/code/subtitles.js"></script>
@@ -47,6 +46,7 @@
 	<body>
 		<div id="wrapper">
 			<svg xmlns="https://www.w3.org/2000/svg" xmlns:xlink="https://www.w3.org/1999/xlink" class="subtitle_container"></svg>
+                        <div id="cast_blocker"><img src="CSS/cast_enabled_512.png"></div>
 			<video id="bgvid" loop preload="none" onended="onend()">
 				Your web browser does not support WebM video.
 			</video>
@@ -81,10 +81,10 @@
 
 		<div id="tooltip" class="is-hidden"></div>
 
-                <span id="chromecast" class="quadbutton" hidden onClick="enableCast()"></span>
+                <span id="chromecast" class="quadbutton" hidden onClick="myCastPlayer.launchApp()"></span>
 
 		<div class="controlsleft">
-			<span id="getnewvideo" class="quadbutton fa fa-refresh" onclick="retrieveNewVideo()"></span>
+			<span id="getnewvideo" class="quadbutton fa fa-refresh" onclick="retrieveNewVideo('button')"></span>
 			<span id="autonext" class="quadbutton fa fa-toggle-on" onclick="toggleAutonext()"></span>
 		</div>
 
@@ -96,4 +96,5 @@
 			<span id="fullscreen-button" class="quadbutton fa fa-expand" onclick="toggleFullscreen()"></span>
 		</div>
 	</body>
+	<script src="CastVideos.js"></script>
 </html>
