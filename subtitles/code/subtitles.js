@@ -1142,10 +1142,12 @@ function subtitleRenderer(SC, video, subFile) {
 		window.removeEventListener("resize",this.resizeSubtitles,false);
 		document.removeEventListener("mozfullscreenchange",this.resizeSubtitles,false);
 		document.removeEventListener("webkitfullscreenchange",this.resizeSubtitles,false);
-		for (var S of subtitles) {
-			clearTimeout(S.startTimer);
-			clearTimeout(S.endTimer);
-		}
+                if (typeof(subtitles) != "undefined") {
+                    for (var S of subtitles) {
+                        clearTimeout(S.startTimer);
+                        clearTimeout(S.endTimer);
+                    }
+                }
 		stopped = true;
 		SC.innerHTML = "<defs></defs>";
 		styleCSS = null;
